@@ -1,0 +1,6 @@
+include setup.py
+include runme.py
+include LICENSE
+include etc/*
+recursive-include doc *.py *.rst *.bat *.md
+include doc/Makefile

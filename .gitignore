@@ -1,0 +1,9 @@
+.idea/
+build/
+dist/
+sdist/
+bdist/
+doc/build/
+*.pyc
+.coverage
+MANIFEST

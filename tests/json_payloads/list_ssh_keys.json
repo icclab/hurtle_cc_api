@@ -1,0 +1,77 @@
+{
+  "status": "ok",
+  "type": "keys",
+  "messages": [
+    {
+      "field": null,
+      "text": "Found 3 ssh keys",
+      "exit_code": 0,
+      "severity": "info",
+      "index": null
+    }
+  ],
+  "version": "1.6",
+  "supported_api_versions": [
+    1.0,
+    1.1,
+    1.2,
+    1.3,
+    1.4,
+    1.5,
+    1.6
+  ],
+  "data": [
+    {
+      "content": "foobaraslkdjf",
+      "type": "ssh-rsa",
+      "name": "default",
+      "links": {
+        "DELETE": {
+          "optional_params": [],
+          "href": "https://127.0.0.1:8443/broker/rest/user/keys/default",
+          "method": "DELETE",
+          "rel": "Delete SSH key",
+          "required_params": []
+        },
+        "UPDATE": {
+          "optional_params": [],
+          "href": "https://127.0.0.1:8443/broker/rest/user/keys/default",
+          "method": "PUT",
+          "rel": "Update SSH key",
+          "required_params": [
+            {
+              "invalid_options": [],
+              "type": "string",
+              "description": "Type of Key",
+              "valid_options": [
+                "ssh-rsa",
+                "ssh-dss",
+                "ssh-rsa-cert-v01@openssh.com",
+                "ssh-dss-cert-v01@openssh.com",
+                "ssh-rsa-cert-v00@openssh.com",
+                "ssh-dss-cert-v00@openssh.com",
+                "krb5-principal"
+              ],
+              "name": "type"
+            },
+            {
+              "invalid_options": [],
+              "type": "string",
+              "description": "The key portion of an rsa key (excluding ssh key type and comment)",
+              "valid_options": [],
+              "name": "content"
+            }
+          ]
+        },
+        "GET": {
+          "optional_params": [],
+          "href": "https://127.0.0.1:8443/broker/rest/user/keys/default",
+          "method": "GET",
+          "rel": "Get SSH key",
+          "required_params": []
+        }
+      }
+    }
+  ],
+  "api_version": 1.6
+}

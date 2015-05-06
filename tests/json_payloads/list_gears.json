@@ -1,0 +1,60 @@
+{
+  "status": "ok", 
+  "type": "gear_groups", 
+  "messages": [
+    {
+      "field": null, 
+      "text": "Showing gear groups for application 'test1' with domain 'mcn'", 
+      "exit_code": 0, 
+      "severity": "info", 
+      "index": null
+    }, 
+    {
+      "field": null, 
+      "text": "started\n", 
+      "exit_code": 0, 
+      "severity": "result", 
+      "index": null
+    }
+  ], 
+  "version": "1.6", 
+  "supported_api_versions": [
+    1.0, 
+    1.1, 
+    1.2, 
+    1.3, 
+    1.4, 
+    1.5, 
+    1.6
+  ], 
+  "data": [
+    {
+      "name": "532ad7986c33f3581c000032", 
+      "scales_to": 1, 
+      "scales_from": 1, 
+      "additional_gear_storage": 0, 
+      "cartridges": [
+        {
+          "display_name": "Python 2.7", 
+          "name": "python-2.7", 
+          "tags": [
+            "service", 
+            "python", 
+            "web_framework"
+          ]
+        }
+      ], 
+      "gears": [
+        {
+          "state": "started", 
+          "id": "532ad7986c33f3581c00002f", 
+          "ssh_url": "ssh://532ad7986c33f3581c00002f@test1-mcn.example.com"
+        }
+      ], 
+      "gear_profile": "small", 
+      "base_gear_storage": 1, 
+      "id": "532ad7986c33f3581c000032"
+    }
+  ], 
+  "api_version": 1.6
+}
