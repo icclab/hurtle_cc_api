@@ -14,15 +14,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from setuptools import setup
+from wsgiref.simple_server import make_server
 
-setup(name='mcn_cc_api',
-      version='0.1',
-      description='Northbound Frontend of the CC',
-      author='Intel Performance Learning Solutions Ltd, Intel Corporation.',
-      author_email='thijs.metsch@intel.com',
-      url='http://www.intel.com',
-      license='Apache 2.0',
-      packages=['api', 'adapters'],
-      requires=['pyssf', 'mox', 'requests']
-     )
+from api import wsgi
+
+import logging
+
+logging.basicConfig(level='DEBUG')
+LOG = logging.getLogger(__name__)
+
+if __name__ == '__main__':
+    app = wsgi.get_app()
+    httpd = make_server('127.0.0.1', 8888, app)
+    LOG.info('Listening on http://127.0.0.1:8888')
+    httpd.serve_forever()
