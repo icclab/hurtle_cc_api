@@ -28,7 +28,7 @@ import unittest
 class AppBackendTest(unittest.TestCase):
 
     def setUp(self):
-        self.dummy = dummies.DummyPaas()
+        self.dummy = dummies.DummyOpenShift2Adapter()
         self.cut = backends.AppBackend(self.dummy)
         self.extras = {'auth_header': {'Authorization': 'Basic foobar'}}
         self.entity = core_model.Resource('', occi_ext.APP, [])
@@ -49,6 +49,18 @@ class AppBackendTest(unittest.TestCase):
 
     # test for sanity
 
+    def test_create_scalable_for_sanity(self):
+        self.entity.attributes = {'occi.app.name': 'foo',
+                                  'occi.app.scale': True,
+                                  'occi.app.scales_from': 3,
+                                  'occi.app.scales_to': 80}
+        self.entity.mixins = [occi_ext.AppTemplate('foo', 'bar'),
+                              occi_ext.ResTemplate('foo', 'bar')]
+        self.cut.create(self.entity, self.extras)
+        self.assertTrue('occi.core.id' in self.entity.attributes)
+        self.assertTrue('occi.app.name' in self.entity.attributes)
+        self.assertTrue(self.entity.attributes['occi.app.scale'])
+
     def test_create_for_sanity(self):
         self.entity.attributes = {'occi.app.name': 'foo'}
         self.entity.mixins = [occi_ext.AppTemplate('foo', 'bar'),
@@ -63,6 +75,9 @@ class AppBackendTest(unittest.TestCase):
         self.assertTrue('occi.app.url' in self.entity.attributes)
         self.assertTrue('occi.app.repo' in self.entity.attributes)
         self.assertTrue('occi.app.state' in self.entity.attributes)
+        self.assertTrue('occi.app.scale' in self.entity.attributes)
+        self.assertTrue('occi.app.scales_from' in self.entity.attributes)
+        self.assertTrue('occi.app.scales_to' in self.entity.attributes)
 
     def test_delete_for_sanity(self):
         self.entity.attributes = {'occi.core.id': '532ac4db6c33f378ca000010'}
@@ -88,7 +103,7 @@ class AppBackendTest(unittest.TestCase):
 class ServiceLinkBackendTest(unittest.TestCase):
 
     def setUp(self):
-        self.dummy = dummies.DummyPaas()
+        self.dummy = dummies.DummyOpenShift2Adapter()
         self.cut = backends.ServiceLink(self.dummy)
         self.src = core_model.Resource('123', occi_ext.APP, [])
         self.trg = core_model.Resource('abc', occi_ext.COMPONENT, [])
@@ -105,7 +120,7 @@ class ServiceLinkBackendTest(unittest.TestCase):
 class SshKeyBackendTest(unittest.TestCase):
 
     def setUp(self):
-        self.dummy = dummies.DummyPaas()
+        self.dummy = dummies.DummyOpenShift2Adapter()
         self.cut = backends.SshKeyBackend(self.dummy)
         self.extras = {'auth_header': {'Authorization': 'Basic foobar'}}
         self.entity = core_model.Resource('/public_key/123',

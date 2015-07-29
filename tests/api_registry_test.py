@@ -28,7 +28,7 @@ import unittest
 class RegistryTest(unittest.TestCase):
 
     def setUp(self):
-        self.cut = registry.Registry(dummies.DummyPaas())
+        self.cut = registry.Registry(dummies.DummyOpenShift2Adapter())
         self.res = core_model.Resource('/component/mongodb-2.2',
                                        occi_ext.COMPONENT, [])
         self.extras = {'auth_header': {'Authorization': 'Basic foobar'}}

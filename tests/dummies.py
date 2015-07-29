@@ -19,14 +19,21 @@ A PaaS dummy adapter.
 import json
 
 
-class DummyPaas():
+class DummyOpenShift2Adapter(object):
     '''
     Mimics OpS.
     '''
 
+    PLATFORM = 'DummyOpenShift2Adapter'
+
+    def __init__(self):
+        pass
+
     status = 'started'
 
-    def create_app(self, name, template, size, auth_head):
+    def create_app(self, name, template, size, auth_head, **kwargs):
+        if 'scale' in kwargs:
+            return json.load(file('tests/json_payloads/create_scalable_app.json'))
         return json.load(file('tests/json_payloads/create_app.json'))
 
     def retrieve_app(self, uid, auth_head):

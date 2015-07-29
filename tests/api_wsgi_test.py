@@ -27,7 +27,7 @@ class WsgiTest(unittest.TestCase):
     # test for success
 
     def test_get_app_for_success(self):
-        wsgi.GLUE = dummies.DummyPaas()
+        wsgi.GLUE = dummies.DummyOpenShift2Adapter()
         app = wsgi.get_app()
         req = {'SERVER_NAME': 'localhost',
                'SERVER_PORT': '8888',
@@ -37,7 +37,7 @@ class WsgiTest(unittest.TestCase):
         app.__call__(req, _ResponseMock())
 
     def test_auth_for_failure(self):
-        wsgi.GLUE = dummies.DummyPaas()
+        wsgi.GLUE = dummies.DummyOpenShift2Adapter()
         app = wsgi.get_app()
         req = {'SERVER_NAME': 'localhost',
                'SERVER_PORT': '8888',

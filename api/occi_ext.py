@@ -35,7 +35,10 @@ KEY_KIND = occi.core_model.Kind('http://schemas.ogf.org/occi/security/'
 APP_ATTR = {'occi.app.name': 'required',
             'occi.app.repo': 'immutable',
             'occi.app.url': 'immutable',
-            'occi.app.state': 'immutable'}
+            'occi.app.state': 'immutable',
+            'occi.app.scale': 'mutable',
+            'occi.app.scales_from': 'mutable',
+            'occi.app.scales_to': 'mutable'}
 
 APP_START = occi.core_model.Action('http://schemas.ogf'
                                    '.org/occi/platform/app/action#',

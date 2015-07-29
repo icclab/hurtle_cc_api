@@ -25,11 +25,12 @@ import urlparse
 LOG = logging.getLogger(__name__)
 
 
-class OpenShiftAdapter(object):
+class OpenShift2Adapter(object):
     '''
     Connects to OpenShift.
     '''
 
+    PLATFORM = 'OpenShift2'
     # XXX: eventually replace with non remote HTTP calls.
 
     cred = {}
@@ -44,17 +45,20 @@ class OpenShiftAdapter(object):
 
         self.conn = httplib.HTTPSConnection(tmp.hostname, tmp.port)
 
-    def create_app(self, name, template, size, auth_head):
+    def create_app(self, name, template, size, auth_head, **kwargs):
         '''
         Deploy an app on OpS.
         '''
         if not name or len(name) == 0:
             raise AttributeError('Please provide a valid identifier.')
-
+        scale = False
+        if 'scale' in kwargs:
+            scale = kwargs['scale']
         body = {
             "name": name,
             "cartridges": template,
             "gear_size": size,
+            "scale": scale
         }
 
         # TODO: handle namespace - first call wil fail when mcn is not there!
@@ -69,6 +73,43 @@ class OpenShiftAdapter(object):
         if response.status not in [201]:
             raise AttributeError('OpS could not serve request.',
                                  response.status, repr(tmp['messages']))
+
+        #cartridge update necessary to select min/max number of cartridges
+        if scale:
+            scales_from = 1
+            scales_to = -1
+            if 'scales_from' in kwargs:
+                scales_from = kwargs['scales_from']
+            if 'scales_to' in kwargs:
+                scales_to = kwargs['scales_to']
+
+            body = {
+                "scales_from": scales_from,
+                "scales_to": scales_to
+            }
+
+            self.conn.request('POST',
+                              '/broker/rest/domain/mcn/applications/' +
+                              name + '/cartridges/' + template,
+                              json.dumps(body), heads)
+            response = self.conn.getresponse()
+            tmp = json.loads(response.read())
+            self.conn.close()
+
+            if response.status not in [200]:
+                #revert application creation if failure to set scalability
+                self.conn.request('DELETE',
+                                  '/broker/rest/domain/mcn/applications/' +
+                                  name,
+                                  heads)
+                response = self.conn.getresponse()
+                tmp = json.loads(response.read())
+                self.conn.close()
+                if response.status not in [204]:
+                    raise AttributeError('OpS could not serve request.',
+                                         response.status,
+                                         repr(tmp['messages']))
+
         return tmp
 
     def retrieve_app(self, uid, auth_head):

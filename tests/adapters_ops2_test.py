@@ -16,7 +16,7 @@
 Unittests for the paas module.
 '''
 
-from adapters import paas
+from adapters import ops2
 
 import json
 import httplib
@@ -44,7 +44,7 @@ class TestOpenShiftAdapter(unittest.TestCase):
 
     def setUp(self):
         self.mox = mox.Mox()
-        self.cut = paas.OpenShiftAdapter('http://demo:changeme@localhost:8443')
+        self.cut = ops2.OpenShift2Adapter('http://demo:changeme@localhost:8443')
 
     # Test for success.
 

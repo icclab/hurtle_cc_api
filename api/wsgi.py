@@ -20,7 +20,8 @@ from occi import backend
 from occi import wsgi
 from occi import core_model
 
-from adapters import paas
+from adapters import ops2
+from adapters import ops3
 
 import ConfigParser
 
@@ -33,12 +34,19 @@ SCHEME = 'http://schemas.openshift.com/template/app#'
 
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
-URI = CONFIG.get('OpenShift', 'uri')
-GLUE = paas.OpenShiftAdapter(URI)
+GLUE_NAME = CONFIG.get('General', 'platform')
+if GLUE_NAME is 'OpenShift2':
+    URI = CONFIG.get('OpenShift2', 'uri')
+    GLUE = ops2.OpenShift2Adapter(URI)
+elif GLUE_NAME is 'OpenShift3':
+    URI=CONFIG.get('OpenShift3', 'uri')
+    GLUE = ops3.OpenShift3Adapter(uri=URI)
+else:
+    raise AttributeError('No valid General/platform configured in etc/defaults.cfg')
 
 # For local testing :-P
 # from tests import dummies
-# GLUE = dummies.DummyPaas()
+# GLUE = dummies.DummyOpenShift2Adapter()
 
 
 def _register_templates(app, auth_head):
@@ -46,46 +54,52 @@ def _register_templates(app, auth_head):
     Register resource and app templates.
     '''
     # resource templates
-    tmp = GLUE.list_gears(auth_head)['data']['capabilities']['gear_sizes']
-    for item in tmp:
-        res_temp = occi_ext.ResTemplate(SCHEME, item,
-                                        related=[occi_ext.RES_TEMPLATE])
-        app.register_backend(res_temp, MIXIN_BACKEND)
+    # No sense in OpS3
+    if GLUE.PLATFORM is 'OpenShift2':
+        tmp = GLUE.list_gears(auth_head)['data']['capabilities']['gear_sizes']
+        for item in tmp:
+            res_temp = occi_ext.ResTemplate(SCHEME, item,
+                                            related=[occi_ext.RES_TEMPLATE])
+            app.register_backend(res_temp, MIXIN_BACKEND)
 
-    # app templates
-    tmp = GLUE.list_features(auth_head)['data']
-    for item in tmp:
-        if item['type'] == 'standalone':
-            cat = occi_ext.AppTemplate(SCHEME, item['name'], related=[
-                occi_ext.APP_TEMPLATE])
-            app.register_backend(cat, MIXIN_BACKEND)
+        # app templates
+        tmp = GLUE.list_features(auth_head)['data']
+        for item in tmp:
+            if item['type'] == 'standalone':
+                cat = occi_ext.AppTemplate(SCHEME, item['name'], related=[
+                    occi_ext.APP_TEMPLATE])
+                app.register_backend(cat, MIXIN_BACKEND)
 
 
 def _register_services(app, auth_head):
     '''
     Register available services.
     '''
-    tmp = GLUE.list_features(auth_head)['data']
-    for item in tmp:
-        if item['type'] == 'embedded' and 'embedded' in item['tags']:
-            key = '/component/' + item['name']
-            res = core_model.Resource(key, occi_ext.COMPONENT, [],
-                                      title=item['description'])
-            app.registry.add_resource(key, res, None)
+    # No sense in OpS3
+    if GLUE.PLATFORM is 'OpenShift2':
+        tmp = GLUE.list_features(auth_head)['data']
+        for item in tmp:
+            if item['type'] == 'embedded' and 'embedded' in item['tags']:
+                key = '/component/' + item['name']
+                res = core_model.Resource(key, occi_ext.COMPONENT, [],
+                                          title=item['description'])
+                app.registry.add_resource(key, res, None)
 
 
 def _register_keys(app, auth_head):
     '''
     Register SSH keys.
     '''
-    tmp = GLUE.list_keys(auth_head)['data']
-    for item in tmp:
-        key = '/public_key/' + item['name']
-        res = core_model.Resource(key, occi_ext.KEY_KIND, [])
-        res.attributes['occi.key.name'] = item['name']
-        res.attributes['occi.key.content'] = item['content']
-        res.attributes['occi.core.id'] = item['name']
-        app.registry.add_resource(key, res, None)
+    # No sense in OpS3
+    if GLUE.PLATFORM is 'OpenShift2':
+        tmp = GLUE.list_keys(auth_head)['data']
+        for item in tmp:
+            key = '/public_key/' + item['name']
+            res = core_model.Resource(key, occi_ext.KEY_KIND, [])
+            res.attributes['occi.key.name'] = item['name']
+            res.attributes['occi.key.content'] = item['content']
+            res.attributes['occi.core.id'] = item['name']
+            app.registry.add_resource(key, res, None)
 
 
 class OpenShiftWrapperApp(wsgi.Application):
@@ -102,6 +116,7 @@ class OpenShiftWrapperApp(wsgi.Application):
             return ['Please provide authentication headers.']
         sec_obj = {'Authorization': environ['HTTP_AUTHORIZATION'],
                    'Accept': '*/*'}
+        # Templates and Keys have no meaning in OpS3
 
         _register_templates(self, sec_obj)
         _register_services(self, sec_obj)

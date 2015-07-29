@@ -1,0 +1,13 @@
+r = requests.delete('http://127.0.0.1:8888/app/doyoucreate', headers=heade, auth=('test', 'test'))
+heade={'Category': 'app; scheme="http://schemas.ogf.org/occi/platform#"',
+ 'Content-Type': 'text/occi',
+ 'X-OCCI-Attribute': 'occi.app.name=doyoucreate'}
+ 
+ requests.get('http://127.0.0.1:8888/app/doyoucreate', headers=head5, auth=('test', 'test'))
+head5={'Category': 'app; scheme="http://schemas.ogf.org/occi/platform#"',
+ 'Content-Type': 'text/occi',
+ 'X-OCCI-Attribute': 'occi.app.name=doyoucreate,occi.app.docker_image=fzhaw/final_rcb,occi.app.env=DESIGN_URI=http://bart.cloudcomplab.ch:35357/v2.0'}
+ 
+ requests.post(urlapp, headers=head5, auth=('test', 'test'))
+ 
+ urlapp='http://127.0.0.1:8888/app/'
