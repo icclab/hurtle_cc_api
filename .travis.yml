@@ -1,0 +1,8 @@
+language: python
+python:
+  - "2.7"
+install:
+  - "python setup.py develop"
+  - "pip install mox"
+# command to run tests
+script: "nosetests --with-coverage --cover-erase --cover-package adapters,api"
