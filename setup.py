@@ -24,5 +24,5 @@ setup(name='mcn_cc_api',
       url='http://www.intel.com',
       license='Apache 2.0',
       packages=['api', 'adapters'],
-      requires=['pyssf', 'mox', 'requests']
+      install_requires=['pyssf==0.4.7', 'requests']
      )
