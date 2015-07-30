@@ -35,10 +35,10 @@ SCHEME = 'http://schemas.openshift.com/template/app#'
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
 GLUE_NAME = CONFIG.get('General', 'platform')
-if GLUE_NAME is 'OpenShift2':
+if GLUE_NAME == 'OpenShift2':
     URI = CONFIG.get('OpenShift2', 'uri')
     GLUE = ops2.OpenShift2Adapter(URI)
-elif GLUE_NAME is 'OpenShift3':
+elif GLUE_NAME == 'OpenShift3':
     URI=CONFIG.get('OpenShift3', 'uri')
     GLUE = ops3.OpenShift3Adapter(uri=URI)
 else:
@@ -55,7 +55,7 @@ def _register_templates(app, auth_head):
     '''
     # resource templates
     # No sense in OpS3
-    if GLUE.PLATFORM is 'OpenShift2':
+    if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_gears(auth_head)['data']['capabilities']['gear_sizes']
         for item in tmp:
             res_temp = occi_ext.ResTemplate(SCHEME, item,
@@ -76,7 +76,7 @@ def _register_services(app, auth_head):
     Register available services.
     '''
     # No sense in OpS3
-    if GLUE.PLATFORM is 'OpenShift2':
+    if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_features(auth_head)['data']
         for item in tmp:
             if item['type'] == 'embedded' and 'embedded' in item['tags']:
@@ -91,7 +91,7 @@ def _register_keys(app, auth_head):
     Register SSH keys.
     '''
     # No sense in OpS3
-    if GLUE.PLATFORM is 'OpenShift2':
+    if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_keys(auth_head)['data']
         for item in tmp:
             key = '/public_key/' + item['name']

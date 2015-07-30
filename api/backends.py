@@ -52,14 +52,14 @@ class AppBackend(backend.KindBackend, backend.ActionBackend):
 
         name = entity.attributes['occi.app.name']
         # OpS2 Specific: no problem if there is no mixin in OpS3 when directly deploying docker containers
-        if self.glue.PLATFORM is 'OpenShift2':
+        if self.glue.PLATFORM == 'OpenShift2':
             if not app_temp or not res_temp:
                 raise AttributeError('Please provide a valid App and '
                                      'Resource Template.')
 
             tmp = self.glue.create_app(name, app_temp.term, res_temp.term,
                                    extras['auth_header'], **scaling)
-        elif self.glue.PLATFORM is 'OpenShift3':
+        elif self.glue.PLATFORM == 'OpenShift3':
             # no need for extra info besides docker image
             docker_image = env_vars = None
             if 'occi.app.docker_image' in entity.attributes:
