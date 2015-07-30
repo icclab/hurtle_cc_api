@@ -6,3 +6,10 @@ install:
   - "pip install mox"
 # command to run tests
 script: "nosetests --with-coverage --cover-erase --cover-package adapters,api"
+notifications:
+  webhooks:
+    urls:
+      - https://master.ops3.cloudcomplab.ch:8443/osapi/v1beta3/namespaces/default/buildconfigs/hurtle-cc-api/webhooks/632a4c6b33422762/generic
+    on_success: always
+    on_failure: never
+    on_start: never
