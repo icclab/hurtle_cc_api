@@ -25,6 +25,6 @@ LOG = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     app = wsgi.get_app()
-    httpd = make_server('127.0.0.1', 8888, app)
-    LOG.info('Listening on http://127.0.0.1:8888')
+    httpd = make_server('127.0.0.1', 8080, app)
+    LOG.info('Listening on http://127.0.0.1:8080')
     httpd.serve_forever()
