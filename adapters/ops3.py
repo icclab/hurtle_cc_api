@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2015, ZHAW.
+#   Copyright 2015 Zuercher Hochschule fuer Angewandte Wissenschaften
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import requests
 import re
 
 LOG = logging.getLogger(__name__)
-NAMESPACE = 'mcn'
 
 
 class OpenShift3Connector(object):
@@ -68,14 +67,15 @@ class OpenShift3Adapter(object):
     cred = {}
     PLATFORM = 'OpenShift3'
 
-    def __init__(self, uri, namespace=None):
+    def __init__(self, uri, namespace, domain):
         """
         Initialize a adapter to OpS.
         """
         if namespace is None:
-            namespace = NAMESPACE
+            raise Exception('You must configure a namespace in your config file!')
 
         self.namespace = namespace
+        self.domain = domain
         self.url = uri
         self.conn = OpenShift3Connector(uri=uri)
 
@@ -85,7 +85,8 @@ class OpenShift3Adapter(object):
         """
         if data is None:
             data = {}
-        return self.conn.request(method=method, url=url,  headers=headers, allow_redirects=allow_redirects, data=data, verify=verify)
+        return self.conn.request(method=method, url=url,  headers=headers,
+                                 allow_redirects=allow_redirects, data=data, verify=verify)
 
     def create_app(self, name, dock_image, auth_head, **kwargs):
         """
@@ -109,12 +110,14 @@ class OpenShift3Adapter(object):
         auth_heads = self.get_auth_heads(auth_head)
 
         # Simple Template Generator for Service, DC, Route
-        template_gen = TemplateGen(name, dock_image, kwargs["env"])
+        template_gen = TemplateGen(name, dock_image, self.namespace, kwargs["env"])
 
         # Create an empty service
         # ----
 
-        response = self.request('POST', self.url + '/api/v1/namespaces/' + NAMESPACE + '/services', data=json.dumps(template_gen.get_serv()), headers=auth_heads, verify=False, allow_redirects=False)
+        response = self.request('POST', self.url + '/api/v1/namespaces/' + self.namespace + '/services',
+                                data=json.dumps(template_gen.get_serv()), headers=auth_heads, verify=False,
+                                allow_redirects=False)
 
         # response.status_code should be 201
         if not response.status_code == 201:
@@ -124,7 +127,8 @@ class OpenShift3Adapter(object):
         # create the deploymentconfig deploying a docker image
         # for now assuming we put all the env vars from the request in all pods
 
-        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs', data=json.dumps(template_gen.get_dc()), verify=False, headers=auth_heads)
+        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + self.namespace + '/deploymentconfigs',
+                                data=json.dumps(template_gen.get_dc()), verify=False, headers=auth_heads)
 
         # response.status_code should be 201
         if not response.status_code == 201:
@@ -132,8 +136,9 @@ class OpenShift3Adapter(object):
 
         # ----
         # Create a route of type name.namespace.apps.ops3.cloudcomplab.ch
-
-        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + NAMESPACE + '/routes', data=json.dumps(template_gen.get_route('.apps.ops3.cloudcomplab.ch')), verify=False, headers=auth_heads)
+        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + self.namespace + '/routes',
+                                data=json.dumps(template_gen.get_route(self.domain)), verify=False,
+                                headers=auth_heads)
 
         # response.status_code should be 201
         if not response.status_code == 201:
@@ -161,7 +166,8 @@ class OpenShift3Adapter(object):
 
         auth_heads = self.get_auth_heads(auth_head)
 
-        response = self.request('GET', self.url + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid, headers=auth_heads, verify=False)
+        response = self.request('GET', self.url + '/api/v1/namespaces/' + self.namespace +
+                                '/replicationcontrollers?labelSelector=name=' + uid, headers=auth_heads, verify=False)
         complete = True
         if response.status_code == 200:
             for item in response.json()['items']:
@@ -173,7 +179,8 @@ class OpenShift3Adapter(object):
 
         tmp = dict()
         # suffix could be retrieved
-        tmp['data'] = {'app_url': uid + '.' + NAMESPACE + '.apps.ops3.cloudcomplab.ch', 'name': uid, 'state': complete}
+        tmp['data'] = {'app_url': uid + '.' + self.namespace + self.domain, 'name': uid,
+                       'state': complete}
 
         return tmp, None
 
@@ -196,46 +203,55 @@ class OpenShift3Adapter(object):
         # wrap all that with exceptions
 
         # delete service
-        response = self.request('DELETE', self.url + '/api/v1/namespaces/' + NAMESPACE + '/services/' + uid, headers=auth_heads, verify=False)
+        response = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace + '/services/' + uid,
+                                headers=auth_heads, verify=False)
         if response.status_code != 200:
             raise AttributeError('Could not delete service with uid ' + uid)
 
         # delete route
-        response = self.request('DELETE', self.url + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/routes/' + uid, headers=auth_heads, verify=False)
+        response = self.request('DELETE', self.url + '/oapi/v1/namespaces/' + self.namespace + '/routes/' + uid,
+                                headers=auth_heads, verify=False)
         if response.status_code != 200:
             raise AttributeError('Could not delete route with uid ' + uid)
 
         # delete all deployment configs
-        response = self.request('GET', self.url + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid, headers=auth_heads, verify=False)
+        response = self.request('GET', self.url + '/oapi/v1/namespaces/' + self.namespace +
+                                '/deploymentconfigs?labelSelector=name=' + uid, headers=auth_heads, verify=False)
         if response.status_code == 200:
             for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs/' + item['metadata']['name'], headers=auth_heads, verify=False)
+                j = self.request('DELETE', self.url + '/oapi/v1/namespaces/' + self.namespace + '/deploymentconfigs/' +
+                                 item['metadata']['name'], headers=auth_heads, verify=False)
                 if j.status_code != 200:
                     raise AttributeError('Could not delete deploymentconfig with uid ' + uid)
         else:
             raise AttributeError('Could not retrieve deploymentconfigs')
 
         # delete all replicationcontrollers
-        response = self.request('GET', self.url + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid, headers=auth_heads, verify=False)
+        response = self.request('GET', self.url + '/api/v1/namespaces/' + self.namespace +
+                                '/replicationcontrollers?labelSelector=name=' + uid, headers=auth_heads, verify=False)
         if response.status_code == 200:
             for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers/' + item['metadata']['name'], headers=auth_heads, verify=False)
+                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace +
+                                 '/replicationcontrollers/' + item['metadata']['name'], headers=auth_heads,
+                                 verify=False)
                 if j.status_code != 200:
                     raise AttributeError('Could not delete replicationcontroller with uid ' + uid)
         else:
             raise AttributeError('Could not retrieve replicationcontrollers')
 
         # delete all pods
-        response = self.request('GET', self.url + '/api/v1/namespaces/' + NAMESPACE + '/pods?labelSelector=name=' + uid, headers=auth_heads, verify=False)
+        response = self.request('GET', self.url + '/api/v1/namespaces/' + self.namespace +
+                                '/pods?labelSelector=name=' + uid, headers=auth_heads, verify=False)
         # possibility of issue here if deletion happens too soon after creation,
         # deploy pod might create application pod during deletion time
         if response.status_code == 200:
             for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + NAMESPACE + '/pods/' + item['metadata']['name'], headers=auth_heads, verify=False)
+                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace + '/pods/' +
+                                 item['metadata']['name'], headers=auth_heads, verify=False)
                 if j.status_code != 200:
                     raise AttributeError('Could not delete pod with uid ' + uid)
         else:
-            raise AttributeError('Cloud not retrieve pods')
+            raise AttributeError('Could not retrieve pods')
         return True
 
     def get_auth_heads(self, simple_auth_head):
@@ -248,7 +264,9 @@ class OpenShift3Adapter(object):
         if not simple_auth_head:
             raise AttributeError('No auth header provided')
 
-        response = self.request('GET', self.url + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client', headers=simple_auth_head, verify=False, allow_redirects=False)
+        response = self.request('GET', self.url +
+                                '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+                                headers=simple_auth_head, verify=False, allow_redirects=False)
 
         # we hit a redirect, which fails with a 500 in current version,
         # so we stop redirect and check for 302 code
@@ -267,22 +285,23 @@ class TemplateGen(object):
     generates the templates for openshift v3 resources
     """
 
-    def __init__(self, name, docker_image, env=None):
+    def __init__(self, name, docker_image, namespace, env=None):
         self.name = name
         # env is a double colon separated string of strings, of type A=B::C=D
         self.env = env
+        self.namespace = namespace
         self.docker_image = docker_image
 
     def get_dc(self):
-        '''
+        """
         Retrieve a DeploymentConfig configured with name, docker_image, namespace and env.vars provided
-        '''
+        """
         deloyment_config = {
             "kind": "DeploymentConfig",
             "apiVersion": "v1",
             "metadata": {
                 "name": self.name,
-                "namespace": NAMESPACE,
+                "namespace": self.namespace,
                 "creationTimestamp": None,
                 "labels": {
                     "deploymentconfig": self.name,
@@ -319,11 +338,9 @@ class TemplateGen(object):
                         "containers": [
                             {
                                 "name": self.name,
-                                # DOCKER PUBLIC IMAGE GOES HERE
                                 "image": self.docker_image,
                                 "ports": [
                                     {
-                                        "name": self.name + "-tcp-8080",
                                         "containerPort": 8080,
                                         "protocol": "TCP"
                                     }
@@ -382,7 +399,7 @@ class TemplateGen(object):
             "apiVersion": "v1",
             "metadata": {
                 "name": self.name,
-                "namespace": NAMESPACE,
+                "namespace": self.namespace,
                 "creationTimestamp": None,
                 "labels": {
                     "generatedby": "CC_API",
@@ -418,13 +435,12 @@ class TemplateGen(object):
         retrieve a route template according to name, namespace and suffix
         :param suffix: the ops3 server fqdn (e.g. .apps.ops3.cloudcomplab.ch)
         """
-        hostname = self.name + "." + NAMESPACE + suffix
+        hostname = self.name + "." + self.namespace + suffix
         route = {
             "kind": "Route",
-            "apiVersion": "v1beta3",
+            "apiVersion": "v1",
             "metadata": {
                 "name": self.name,
-                "creationTimestamp": None,
                 "labels": {
                     "generatedby": "CC_API",
                     "name": self.name

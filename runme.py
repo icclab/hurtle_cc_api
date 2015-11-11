@@ -14,17 +14,34 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from wsgiref.simple_server import make_server
-
 from api import wsgi
-
 import logging
+import signal
+
+from tornado import httpserver
+from tornado import ioloop
+from tornado import wsgi as t_wsgi
+
 
 logging.basicConfig(level='DEBUG')
 LOG = logging.getLogger(__name__)
 
+
+def shutdown():
+    print 'Goodbye cruel world...'
+    ioloop.IOLoop.instance().stop()
+
+
+def sig_handler(sig, frame):
+    ioloop.IOLoop.instance().add_callback(shutdown)
+
 if __name__ == '__main__':
     app = wsgi.get_app()
-    httpd = make_server('127.0.0.1', 8888, app)
-    LOG.info('Listening on http://127.0.0.1:8888')
-    httpd.serve_forever()
+    container = t_wsgi.WSGIContainer(app)
+    http_server = httpserver.HTTPServer(container)
+    http_server.listen(8888)
+
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+
+    i = ioloop.IOLoop.instance().start()

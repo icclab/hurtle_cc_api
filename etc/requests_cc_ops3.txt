@@ -1,13 +1,10 @@
-r = requests.delete('http://127.0.0.1:8888/app/doyoucreate', headers=heade, auth=('test', 'test'))
-heade={'Category': 'app; scheme="http://schemas.ogf.org/occi/platform#"',
- 'Content-Type': 'text/occi',
- 'X-OCCI-Attribute': 'occi.app.name=doyoucreate'}
- 
- requests.get('http://127.0.0.1:8888/app/doyoucreate', headers=head5, auth=('test', 'test'))
-head5={'Category': 'app; scheme="http://schemas.ogf.org/occi/platform#"',
- 'Content-Type': 'text/occi',
- 'X-OCCI-Attribute': 'occi.app.name=doyoucreate,occi.app.docker_image=fzhaw/final_rcb,occi.app.env=DESIGN_URI=http://bart.cloudcomplab.ch:35357/v2.0'}
- 
- requests.post(urlapp, headers=head5, auth=('test', 'test'))
- 
- urlapp='http://127.0.0.1:8888/app/'
+import requests
+auth = ('demo', 'LU4JiFJSuL0H3r5bCJ1A3A')
+heads = {'Category': 'app; scheme="http://schemas.ogf.org/occi/platform#"', 'Content-Type': 'text/occi', 'Accept': 'text/occi', 'X-OCCI-Attribute': 'occi.app.name="sample-so", occi.app.image="dizz/hurtle-sample-so", occi.app.env="DESIGN_URI=http://bart.cloudcomplab.ch:35357/v2.0"'}
+
+host = 'http://0.0.0.0:8888'
+
+r = requests.get(host+'/-/', headers=heads, auth=auth)
+r = requests.post(host+'/app/', headers=heads, auth=auth)
+rg = requests.get(r.headers['location'], auth=auth, headers=heads)
+r = requests.delete(r.headers['location'], auth=auth, headers=heads)

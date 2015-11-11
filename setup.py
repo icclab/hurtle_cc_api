@@ -16,13 +16,12 @@
 
 from setuptools import setup
 
-setup(name='mcn_cc_api',
-      version='0.1',
+setup(name='hurtle_cc_api',
+      version='0.2',
       description='Northbound Frontend of the CC',
       author='Intel Performance Learning Solutions Ltd, Intel Corporation.',
       author_email='thijs.metsch@intel.com',
       url='http://www.intel.com',
       license='Apache 2.0',
       packages=['api', 'adapters'],
-      install_requires=['pyssf==0.4.7', 'requests']
-     )
+      install_requires=['pyssf==0.4.7', 'requests', 'tornado'])

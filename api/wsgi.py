@@ -1,4 +1,5 @@
 #   Copyright (c) 2013-2015, Intel Performance Learning Solutions Ltd, Intel Corporation.
+#   Copyright 2015 Zuercher Hochschule fuer Angewandte Wissenschaften
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -12,9 +13,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-'''
-A WSGI app represeting the OCCI api.
-'''
+"""
+A WSGI app representing the OCCI api.
+"""
+
+import ConfigParser
 
 from occi import backend
 from occi import wsgi
@@ -22,9 +25,6 @@ from occi import core_model
 
 from adapters import ops2
 from adapters import ops3
-
-import ConfigParser
-
 from api import backends
 from api import registry
 from api import occi_ext
@@ -35,12 +35,15 @@ SCHEME = 'http://schemas.openshift.com/template/app#'
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
 GLUE_NAME = CONFIG.get('General', 'platform')
+# TODO make a call against a URL and figure out via API what adapter should be used
+NS = CONFIG.get('OpenShift3', 'namespace')
 if GLUE_NAME == 'OpenShift2':
     URI = CONFIG.get('OpenShift2', 'uri')
     GLUE = ops2.OpenShift2Adapter(URI)
 elif GLUE_NAME == 'OpenShift3':
-    URI=CONFIG.get('OpenShift3', 'uri')
-    GLUE = ops3.OpenShift3Adapter(uri=URI)
+    URI = CONFIG.get('OpenShift3', 'uri')
+    DOMAIN = CONFIG.get('OpenShift3', 'domain')
+    GLUE = ops3.OpenShift3Adapter(uri=URI, namespace=NS, domain=DOMAIN)
 else:
     raise AttributeError('No valid General/platform configured in etc/defaults.cfg')
 
@@ -50,11 +53,12 @@ else:
 
 
 def _register_templates(app, auth_head):
-    '''
+    """
     Register resource and app templates.
-    '''
+    """
     # resource templates
     # No sense in OpS3
+    # TODO move check one-level up
     if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_gears(auth_head)['data']['capabilities']['gear_sizes']
         for item in tmp:
@@ -72,10 +76,11 @@ def _register_templates(app, auth_head):
 
 
 def _register_services(app, auth_head):
-    '''
+    """
     Register available services.
-    '''
+    """
     # No sense in OpS3
+    # TODO move check one-level up
     if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_features(auth_head)['data']
         for item in tmp:
@@ -87,10 +92,11 @@ def _register_services(app, auth_head):
 
 
 def _register_keys(app, auth_head):
-    '''
+    """
     Register SSH keys.
-    '''
+    """
     # No sense in OpS3
+    # TODO move check one-level up
     if GLUE.PLATFORM == 'OpenShift2':
         tmp = GLUE.list_keys(auth_head)['data']
         for item in tmp:
@@ -103,14 +109,14 @@ def _register_keys(app, auth_head):
 
 
 class OpenShiftWrapperApp(wsgi.Application):
-    '''
+    """
     Simple WSGI app wrapper.
-    '''
+    """
 
     def __call__(self, environ, response):
-        '''
+        """
         Simplistic security check.
-        '''
+        """
         if 'HTTP_AUTHORIZATION' not in environ:
             response('401 Unauthorized', [])
             return ['Please provide authentication headers.']
@@ -126,12 +132,11 @@ class OpenShiftWrapperApp(wsgi.Application):
 
 
 def get_app():
-    '''
+    """
     Returns a WSGI compatible app.
-    '''
+    """
     app_backend = backends.AppBackend(GLUE)
     service_link_back = backends.ServiceLink(GLUE)
-    ssh_backend = backends.SshKeyBackend(GLUE)
 
     app = OpenShiftWrapperApp(registry=registry.Registry(GLUE))
     app.register_backend(occi_ext.APP, app_backend)
@@ -139,6 +144,8 @@ def get_app():
     app.register_backend(occi_ext.APP_START, app_backend)
     app.register_backend(occi_ext.COMPONENT, backend.KindBackend())
     app.register_backend(occi_ext.COMP_LINK, service_link_back)
-    app.register_backend(occi_ext.KEY_KIND, ssh_backend)
+    if GLUE_NAME == 'OpenShift2':
+        ssh_backend = backends.SshKeyBackend(GLUE)
+        app.register_backend(occi_ext.KEY_KIND, ssh_backend)
 
     return app

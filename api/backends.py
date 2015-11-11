@@ -12,20 +12,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-'''
+"""
 Module containing the backends for pyssf.
-'''
+"""
 import uuid
 
 from api import occi_ext
 from occi import backend
-from adapters import ops2, ops3
 
 
 class AppBackend(backend.KindBackend, backend.ActionBackend):
-    '''
+    """
     Handle PaaS based Applications.
-    '''
+    """
 
     def __init__(self, paas_adapter):
         self.glue = paas_adapter
@@ -57,19 +56,22 @@ class AppBackend(backend.KindBackend, backend.ActionBackend):
                 raise AttributeError('Please provide a valid App and '
                                      'Resource Template.')
 
-            tmp = self.glue.create_app(name, app_temp.term, res_temp.term,
-                                   extras['auth_header'], **scaling)
+            tmp = self.glue.create_app(name, app_temp.term, res_temp.term, extras['auth_header'], **scaling)
         elif self.glue.PLATFORM == 'OpenShift3':
             # no need for extra info besides docker image
             docker_image = env_vars = None
-            if 'occi.app.docker_image' in entity.attributes:
-                docker_image = entity.attributes['occi.app.docker_image']
+            if 'occi.app.image' in entity.attributes:
+                docker_image = entity.attributes['occi.app.image']
             if 'occi.app.env' in entity.attributes:
                 env_vars = entity.attributes['occi.app.env']
             if not docker_image:
                 raise AttributeError('Please provide a valid docker image name.')
+            if len(name) > 24:
+                raise AttributeError('occi.app.name must not be greater than 24 characters')
 
             tmp = self.glue.create_app(name, docker_image, extras['auth_header'], env=env_vars)
+            scale = tmp['data']['scalable']
+            entity.attributes['occi.app.scale'] = scale
         else:
             # raise AttributeError('Invalid GLUE chosen in CC API.')
             # TODO: For testing purposes, better to not raise that and instead have the default OpS behaviour
@@ -77,12 +79,8 @@ class AppBackend(backend.KindBackend, backend.ActionBackend):
                 raise AttributeError('Please provide a valid App and '
                                      'Resource Template.')
 
-            tmp = self.glue.create_app(name, app_temp.term, res_temp.term,
-                                   extras['auth_header'], **scaling)
-        # OpS2 compatibility
+            tmp = self.glue.create_app(name, app_temp.term, res_temp.term, extras['auth_header'], **scaling)
         uid = tmp['data']['id']
-        scale = tmp['data']['scalable']
-        entity.attributes['occi.app.scale'] = scale
         entity.attributes['occi.core.id'] = uid
         entity.identifier = '/app/' + uid
 
@@ -130,9 +128,9 @@ class AppBackend(backend.KindBackend, backend.ActionBackend):
 
 
 class ServiceLink(backend.KindBackend):
-    '''
+    """
     Backend for the service links.
-    '''
+    """
 
     def __init__(self, paas_adapter):
         self.glue = paas_adapter
@@ -149,9 +147,9 @@ class ServiceLink(backend.KindBackend):
 
 
 class SshKeyBackend(backend.KindBackend):
-    '''
+    """
     Backend handling ssh keys.
-    '''
+    """
 
     def __init__(self, paas_adapter):
         self.glue = paas_adapter

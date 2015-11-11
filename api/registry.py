@@ -12,9 +12,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-'''
+"""
 Registry for pyssf.
-'''
+"""
 import uuid
 
 import logging
@@ -28,9 +28,9 @@ LOG = logging.getLogger()
 
 
 class Registry(registry.NonePersistentRegistry):
-    '''
+    """
     Registry for the API.
-    '''
+    """
 
     def __init__(self, paas_backend):
         super(Registry, self).__init__()
@@ -41,6 +41,7 @@ class Registry(registry.NonePersistentRegistry):
         self.resources[resource.identifier] = resource
 
     def get_resources(self, extras):
+        # TODO fix for OpSv3 - no method implemented
         tmp = self.glue.list_apps(extras['auth_header'])
         for item in tmp['data']:
             uid = item['id']
@@ -50,7 +51,7 @@ class Registry(registry.NonePersistentRegistry):
                 entity.attributes['occi.core.id'] = uid
                 res_temp = self.get_category('/' + item['gear_profile'] +
                                              '/', extras)
-                #app_temp = self.get_category('/' + item['framework'] +
+                # app_temp = self.get_category('/' + item['framework'] +
                 #                             '/', extras)
                 # links to services
                 for component in item['embedded']:
@@ -67,9 +68,9 @@ class Registry(registry.NonePersistentRegistry):
                     except KeyError:
                         LOG.debug('Skipping link to the component {}.'
                                   .format(component))
-                entity.mixins = [res_temp] #, app_temp]
+                entity.mixins = [res_temp]  # , app_temp]
                 self.add_resource('', entity, extras)
-        # XXX: make this nicer
+        # TODO make this nicer
         available_res = self.resources.keys()
         for res_key in available_res:
             ids = [item['id'] for item in tmp['data']]
