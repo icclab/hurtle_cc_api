@@ -10,7 +10,7 @@ Once done, clone the *hurtle\_cc\_api* code and configure the url in the default
 	[OpenShift]
 	uri=https://demo:changeme@127.0.0.1:443/
 
-Above we configure the CC API's OpenShift driver. Currently Hurtle only supports OpenShift basic authentication
+Above we configure the CC API's OpenShift v2 driver. Currently Hurtle only supports OpenShift basic authentication
 
 Now start the Northbound API:
 
@@ -20,7 +20,11 @@ The Northbound API is now exposed on [http://localhost:8888](http://localhost:88
 
 	$ sudo iptables -I INPUT -p tcp --dport 8888 -j ACCEPT
 
-## Creating an Application / SO instance
+## Interacting with the CC API
+
+By interacting with the CC you can create an Application / SO instance.
+
+### OpenShift v2 Backend
 
 SM should trigger the creation of a new app/SO names '*test*' - here demonstrated using curl:
 
