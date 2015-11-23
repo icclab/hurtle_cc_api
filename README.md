@@ -1,7 +1,5 @@
 # Run Northbound API
 
-***Note***: *will be automated in next sprints...*
-
 Login to the CC dev box and install the dependencies:
 
 	$ pip install mox pyssf
