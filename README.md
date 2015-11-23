@@ -1,4 +1,4 @@
-# Run Northbound API
+# Hurtle Cloud Controller (CC) API
 
 Login to the CC dev box and install the dependencies:
 
