@@ -1,6 +1,6 @@
 # Hurtle Cloud Controller (CC) API
 
-Login to the CC dev box and install the dependencies:
+Login to a VM or server for the CC and install the dependencies:
 
 	$ pip install mox pyssf
 
@@ -10,11 +10,13 @@ Once done, clone the *hurtle\_cc\_api* code and configure the url in the default
 	[OpenShift]
 	uri=https://demo:changeme@127.0.0.1:443/
 
+Above we configure the CC API's OpenShift driver. Currently Hurtle only supports OpenShift basic authentication
+
 Now start the Northbound API:
 
 	$ ./runme.py
 
-The Northbound API is now exposed on [http://localhost:8888](http://localhost:8888). Make sure the port is accessible through the firewall:
+The Northbound API is now exposed on [http://localhost:8888](http://localhost:8888). In fact all available interfaces are bound to by the CC API. Make sure the port is accessible through the firewall:
 
 	$ sudo iptables -I INPUT -p tcp --dport 8888 -j ACCEPT
 
