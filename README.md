@@ -18,8 +18,7 @@ You might have to allow the Nothbound API of the CC through your filewall. Here 
 
 	iptables -I INPUT -p tcp --dport 8888 -j ACCEPT
 
-# Configuration
-All Configuration is done via the ```defaults.cfg``` file in the ```etc``` directory.
+The Northbound API is now exposed on [http://localhost:8888](http://localhost:8888). Make sure the port is accessible through the firewall:
 
 
 	[General]
