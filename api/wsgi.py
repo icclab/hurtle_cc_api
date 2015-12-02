@@ -35,15 +35,15 @@ SCHEME = 'http://schemas.openshift.com/template/app#'
 
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
-GLUE_NAME = os.environ.data['GLUE_NAME'] or CONFIG.get('General', 'platform')
+GLUE_NAME = os.environ.get('GLUE_NAME') or CONFIG.get('General', 'platform')
 # TODO make a call against a URL and figure out via API what adapter should be used
-NS = os.environ.data['NAMESPACE'] or CONFIG.get('OpenShift3', 'namespace')
+NS = os.environ.get('NAMESPACE') or CONFIG.get('OpenShift3', 'namespace')
 if GLUE_NAME == 'OpenShift2':
-    URI = CONFIG.get('OpenShift2', 'uri')
+    URI = os.environ.get('URI') or CONFIG.get('OpenShift2', 'uri')
     GLUE = ops2.OpenShift2Adapter(URI)
 elif GLUE_NAME == 'OpenShift3':
-    URI = os.environ.data['URI'] or CONFIG.get('OpenShift3', 'uri')
-    DOMAIN = os.environ.data['DOMAIN'] or CONFIG.get('OpenShift3', 'domain')
+    URI = os.environ.get('URI') or CONFIG.get('OpenShift3', 'uri')
+    DOMAIN = os.environ.get('DOMAIN') or CONFIG.get('OpenShift3', 'domain')
     GLUE = ops3.OpenShift3Adapter(uri=URI, namespace=NS, domain=DOMAIN)
 else:
     raise AttributeError('No valid General/platform configured in etc/defaults.cfg')

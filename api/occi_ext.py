@@ -24,7 +24,7 @@ import os
 
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
-GLUE_NAME = os.environ.data['GLUE_NAME'] or CONFIG.get('General', 'platform')
+GLUE_NAME = os.environ.get('GLUE_NAME') or CONFIG.get('General', 'platform')
 
 
 # Security
