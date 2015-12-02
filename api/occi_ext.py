@@ -20,11 +20,11 @@ OCCI model extensions supporting PaaS.
 import ConfigParser
 import occi.core_model
 import occi.extensions.infrastructure
-
+import os
 
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.read('etc/defaults.cfg')
-GLUE_NAME = CONFIG.get('General', 'platform')
+GLUE_NAME = os.environ.data['GLUE_NAME'] or CONFIG.get('General', 'platform')
 
 
 # Security
