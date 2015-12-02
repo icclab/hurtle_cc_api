@@ -349,16 +349,16 @@ class TestOpenShiftAdapter(unittest.TestCase):
                  "return_code": 200,
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/routes/' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/routes/' + uid,
                  "return_code": 200,
                  },
                 {"method": 'GET',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
                  "return_code": 200,
                  "return_obj": {'items': [{'metadata': {'name': uid}}]}
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid,
                  "return_code": 200,
                  },
                 {"method": 'GET',
@@ -408,16 +408,16 @@ class TestOpenShiftAdapter(unittest.TestCase):
                  "return_code": 200,
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/routes/' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/routes/' + uid,
                  "return_code": 200,
                  },
                 {"method": 'GET',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
                  "return_code": 200,
                  "return_obj": {'items': [{'metadata': {'name': uid}}]}
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid,
                  "return_code": 200,
                  },
                 {"method": 'GET',
@@ -446,7 +446,7 @@ class TestOpenShiftAdapter(unittest.TestCase):
                            'Could not delete deploymentconfig with uid ' + uid,
                            'Could not retrieve replicationcontrollers',
                            'Could not delete replicationcontroller with uid ' + uid,
-                           'Cloud not retrieve pods',
+                           'Could not retrieve pods',
                            'Could not delete pod with uid ' + uid]
         while len(reqs) > 0:
 
@@ -467,7 +467,7 @@ class TestOpenShiftAdapter(unittest.TestCase):
                 self.ops3.delete_app('foo_name', self._get_auth_heads(''))
 
             # assert
-            self.assertTrue(expected_error in context.exception, msg=context.exception)
+            self.assertTrue(expected_error in context.exception, msg=expected_error)
             self.mox.VerifyAll()
 
             # rotate test
@@ -482,20 +482,20 @@ class TestOpenShiftAdapter(unittest.TestCase):
                  "return_code": 200,
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/routes/' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/routes/' + uid,
                  "return_code": 200,
                  },
                 {"method": 'GET',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs?labelSelector=name=' + uid,
                  "return_code": 200,
                  "return_obj": {'items': [{'metadata': {'name': uid + '-1'}}, {'metadata': {'name': uid + '-2'}}]}
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid + '-1',
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid + '-1',
                  "return_code": 200,
                  },
                 {"method": 'DELETE',
-                 "url": self.URI + '/osapi/v1beta3/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid + '-2',
+                 "url": self.URI + '/oapi/v1/namespaces/' + NAMESPACE + '/deploymentconfigs/' + uid + '-2',
                  "return_code": 200,
                  },
                 {"method": 'GET',
@@ -646,5 +646,6 @@ class TestOpenShiftAdapter(unittest.TestCase):
         self.assertEqual(dc['spec']['template']['metadata']['labels']['name'], name)
         self.assertEqual(dc['spec']['template']['spec']['containers'][0]['name'], name)
         self.assertEqual(dc['spec']['template']['spec']['containers'][0]['image'], docker_image)
-        self.assertEqual(dc['spec']['template']['spec']['containers'][0]['ports'][0]['name'], name + '-tcp-8080')
+        self.assertEqual(dc['spec']['template']['spec']['containers'][0]['ports'][0]['containerPort'], 8080)
+        self.assertEqual(dc['spec']['template']['spec']['containers'][0]['ports'][0]['protocol'], 'TCP')
         self.assertEqual(dc['spec']['template']['spec']['containers'][0]['env'], env)
