@@ -3,4 +3,4 @@ requests
 tornado
 nose
 mox
-occi
+coverage
