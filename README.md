@@ -121,6 +121,14 @@ To request its deletion:
 
 	r = requests.delete(r.headers['location'], auth=auth, headers=heads)
 
+# Tests
+To run the tests, make sure you got the required dev dependencies installed:
+
+	pip install -r test_requirements.txt
+
+Then you can run the tests:
+
+	nosetests
 
 ## Supported by
 
