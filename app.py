@@ -15,7 +15,8 @@
 #   limitations under the License.
 
 from wsgiref.simple_server import make_server
-
+import thread
+from api import admin
 from api import wsgi
 
 import logging
@@ -24,6 +25,7 @@ logging.basicConfig(level='DEBUG')
 LOG = logging.getLogger(__name__)
 
 if __name__ == '__main__':
+    thread.start_new_thread(admin.server, ('0.0.0.0', 8081))
     app = wsgi.get_app()
     httpd = make_server('0.0.0.0', 8080, app)
     LOG.info('Listening on http://0.0.0.0:8080')

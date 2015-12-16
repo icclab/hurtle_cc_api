@@ -24,4 +24,9 @@ setup(name='hurtle_cc_api',
       url='http://www.intel.com',
       license='Apache 2.0',
       packages=['api', 'adapters'],
-      install_requires=['pyssf==0.4.7', 'requests', 'tornado'])
+      install_requires=[
+                        'pyssf==0.4.7',
+                        'requests',
+                        'tornado',
+                        'flask'
+                        ])
