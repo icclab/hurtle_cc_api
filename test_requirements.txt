@@ -4,3 +4,4 @@ tornado
 nose
 mox
 coverage
+flask
