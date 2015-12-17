@@ -4,11 +4,13 @@ import os
 
 app = Flask('hurtle-cc-api')
 
+
 @app.route('/')
 def home():
     return '', 200
 
-@app.route('/update')
+
+@app.route('/update', methods=['POST'])
 def self_update():
     url = os.environ.get('SELF_REBUILD_URL', False)
     if not url:
