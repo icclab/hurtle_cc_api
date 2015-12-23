@@ -47,7 +47,7 @@ def update(name):
     uri = os.environ.get('URI')
 
     response = requests.get(uri + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
-                            auth=('demo', 'LU4JiFJSuL0H3r5bCJ1A3A'), verify=False, allow_redirects=False)
+                            auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False, allow_redirects=False)
 
     if not response.status_code == 302:
         raise AttributeError('Login Error')
