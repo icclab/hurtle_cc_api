@@ -69,7 +69,7 @@ def update(name):
     found = False
     for env in deployment_config['spec']['template']['spec']['containers'][0]['env']:
         if env['name'] == 'VERSION':
-            env['value'] = str(int(env['value']) + 1)
+            env['value'] = deployment_config['status']['latestVersion']
             found = True
         new_env.append(env)
     if not found:
