@@ -34,7 +34,7 @@ def home():
 
 
 # curl -X POST $URL/build/self -> re-builds CC (also re-provisions)
-# curl -X POST $URL/update/$NAME -> re-builds the buildConfig for $NAME, does not trigger redeployment!
+# curl -X POST $URL/build/$NAME -> re-builds the buildConfig for $NAME, does not trigger redeployment!
 @app.route('/build/<name>', methods=['POST'])
 def build(name):
     if name == 'self':
