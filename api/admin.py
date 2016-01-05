@@ -7,14 +7,15 @@ import urllib
 
 app = Flask('hurtle-cc-api')
 
-def get_auth_heads():
 
+def get_auth_heads():
     uri = os.environ.get('URI', False)
     if not uri:
         raise AttributeError('No URI defined!')
 
     response = requests.get(uri + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
-                            auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False, allow_redirects=False)
+                            auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False,
+                            allow_redirects=False)
 
     if not response.status_code == 302:
         raise AttributeError('Login Error')
@@ -26,9 +27,11 @@ def get_auth_heads():
 
     return auth_heads
 
+
 @app.route('/')
 def home():
     return '', 200
+
 
 # curl -X POST $URL/build/self -> re-builds CC (also re-provisions)
 # curl -X POST $URL/update/$NAME -> re-builds the buildConfig for $NAME, does not trigger redeployment!
@@ -49,7 +52,8 @@ def build(name):
 
     auth_heads = get_auth_heads()
 
-    response = requests.get(uri + '/oapi/v1/namespaces/test/builds?labelselector=%s' % (urllib.quote('app=%s' % name)), headers=auth_heads, verify=False)
+    response = requests.get(uri + '/oapi/v1/namespaces/test/builds?labelselector=%s' % (urllib.quote('app=%s' % name)),
+                            headers=auth_heads, verify=False)
 
     data = json.loads(response.content)
 
@@ -68,7 +72,8 @@ def build(name):
             pass
     new_build_number = latest_build_number + 1
     latest_build['metadata']['annotations']['openshift.io/build.number'] = str(new_build_number)
-    latest_build['metadata']['name'] = latest_build['metadata']['name'].replace(str(latest_build_number), str(new_build_number))
+    latest_build['metadata']['name'] = latest_build['metadata']['name'].replace(str(latest_build_number),
+                                                                                str(new_build_number))
     del latest_build['metadata']['selfLink']
     del latest_build['metadata']['uid']
     del latest_build['metadata']['resourceVersion']
@@ -76,11 +81,12 @@ def build(name):
     latest_build['apiVersion'] = 'v1'
     latest_build['kind'] = 'Build'
 
-
     json_payload = json.dumps(latest_build)
-    response = requests.post(uri + '/oapi/v1/namespaces/test/builds', headers=auth_heads, verify=False, data=json_payload)
+    response = requests.post(uri + '/oapi/v1/namespaces/test/builds', headers=auth_heads, verify=False,
+                             data=json_payload)
 
     return response.content, response.status_code
+
 
 # curl -X POST $URL/update/self -> re-provisions CC (no effect)
 # curl -X POST $URL/update/$NAME -> re-provisions the deploymentConfig $NAME, do this after a /build/$NAME was triggered
@@ -115,7 +121,8 @@ def update(name):
 
     deployment_config_json = json.dumps(deployment_config)
 
-    r = requests.put('%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name), headers=auth_heads, verify=False, data=deployment_config_json)
+    r = requests.put('%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name), headers=auth_heads,
+                     verify=False, data=deployment_config_json)
 
     if r.status_code == 200:
         return json.dumps(deployment_config), 200
