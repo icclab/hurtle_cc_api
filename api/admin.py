@@ -7,6 +7,13 @@ import urllib
 
 app = Flask('hurtle-cc-api')
 
+uri = os.environ.get('URI', False)
+namespace = os.environ.get('NAMESPACE', False)
+if not uri:
+    raise AttributeError('CC not configured properly! no URI found!')
+if not namespace:
+    raise AttributeError('CC not configured properly! no NAMESPACE found!')
+
 
 def get_auth_heads():
     uri = os.environ.get('URI', False)
@@ -33,6 +40,39 @@ def home():
     return '', 200
 
 
+# curl -X GET $URL/build/$NAME/ -> gets a list of all builds
+@app.route('/build/<name>/', methods=['GET'])
+def list_builds(name):
+    auth_heads = get_auth_heads()
+
+    response = requests.get(
+        uri + '/oapi/v1/namespaces/%s/builds?labelselector=%s' % (namespace, urllib.quote('app=%s' % name)),
+        headers=auth_heads, verify=False)
+
+    data = json.loads(response.content)
+    builds = []
+    for build in data['items']:
+        try:
+            builds.append(build['metadata']['name'])
+        except KeyError:
+            pass
+
+    return json.dumps(builds), 200
+
+
+# curl -X GET $URL/build/$NAME/$BUILD_ID/ -> gets the status of the build
+@app.route('/build/<name>/<build>', methods=['GET'])
+def get_build(name, build):
+    auth_heads = get_auth_heads()
+
+    response = requests.get(uri + '/oapi/v1/namespaces/%s/builds/%s' % (namespace, build), headers=auth_heads,
+                            verify=False)
+
+    data = json.loads(response.content)
+
+    return json.dumps(data['status']), 200
+
+
 # curl -X POST $URL/build/self -> re-builds CC (also re-provisions)
 # curl -X POST $URL/build/$NAME -> re-builds the buildConfig for $NAME, does not trigger redeployment!
 @app.route('/build/<name>', methods=['POST'])
@@ -43,17 +83,11 @@ def build(name):
     if name == '':
         return 'You must provide a valid name!', 404
 
-    uri = os.environ.get('URI', False)
-    namespace = os.environ.get('NAMESPACE', False)
-    if not uri:
-        return 'CC not configured properly! no URI found!', 500
-    if not namespace:
-        return 'CC not configured properly! no NAMESPACE found!', 500
-
     auth_heads = get_auth_heads()
 
-    response = requests.get(uri + '/oapi/v1/namespaces/test/builds?labelselector=%s' % (urllib.quote('app=%s' % name)),
-                            headers=auth_heads, verify=False)
+    response = requests.get(
+        uri + '/oapi/v1/namespaces/%s/builds?labelselector=%s' % (namespace, urllib.quote('app=%s' % name)),
+        headers=auth_heads, verify=False)
 
     data = json.loads(response.content)
 
@@ -94,9 +128,6 @@ def build(name):
 def update(name):
     if name == 'self':
         return 'CC does not support update on itself, use build instead!', 500
-
-    namespace = os.environ.get('NAMESPACE')
-    uri = os.environ.get('URI')
 
     auth_heads = get_auth_heads()
 
