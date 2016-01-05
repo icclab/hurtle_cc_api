@@ -3,48 +3,15 @@ import requests
 import os
 import re
 import json
+import urllib
 
 app = Flask('hurtle-cc-api')
 
+def get_auth_heads():
 
-@app.route('/')
-def home():
-    return '', 200
-
-
-@app.route('/build/<name>', methods=['POST'])
-def build(name):
-    if name == 'self':
-        webhook_url = os.environ.get('SELF_REBUILD_URL', False)
-        if not webhook_url:
-            return 'CC not configured properly! no SELF_REBUILD_URL found!', 500
-
-    else:
-        if name == '':
-            return 'You must provide a valid name!', 404
-        uri = os.environ.get('URI', False)
-        namespace = os.environ.get('NAMESPACE', False)
-        secret = os.environ.get('SECRET', False)
-        if not uri:
-            return 'CC not configured properly! no URI found!', 500
-        if not namespace:
-            return 'CC not configured properly! no NAMESPACE found!', 500
-        if not secret:
-            return 'CC not configured properly! no SECRET found!', 500
-
-        webhook_url = '%s/oapi/v1/namespaces/%s/buildconfigs/%s/webhooks/%s/generic' % (uri, namespace, name, secret)
-
-    response = requests.post(url=webhook_url, verify=False)
-    return response.content, response.status_code
-
-
-@app.route('/update/<name>', methods=['POST'])
-def update(name):
-    if name == 'self':
-        return 'CC does not support update on itself, use build instead!', 500
-
-    namespace = os.environ.get('NAMESPACE')
-    uri = os.environ.get('URI')
+    uri = os.environ.get('URI', False)
+    if not uri:
+        raise AttributeError('No URI defined!')
 
     response = requests.get(uri + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
                             auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False, allow_redirects=False)
@@ -56,6 +23,76 @@ def update(name):
     ops_token = re.search('access_token=([^&]*)', location).group(1)
     auth_heads = dict()
     auth_heads['Authorization'] = 'Bearer ' + ops_token
+
+    return auth_heads
+
+@app.route('/')
+def home():
+    return '', 200
+
+# curl -X POST $URL/build/self -> re-builds CC (also re-provisions)
+# curl -X POST $URL/update/$NAME -> re-builds the buildConfig for $NAME, does not trigger redeployment!
+@app.route('/build/<name>', methods=['POST'])
+def build(name):
+    if name == 'self':
+        name = 'hurtle-cc-api'
+
+    if name == '':
+        return 'You must provide a valid name!', 404
+
+    uri = os.environ.get('URI', False)
+    namespace = os.environ.get('NAMESPACE', False)
+    if not uri:
+        return 'CC not configured properly! no URI found!', 500
+    if not namespace:
+        return 'CC not configured properly! no NAMESPACE found!', 500
+
+    auth_heads = get_auth_heads()
+
+    response = requests.get(uri + '/oapi/v1/namespaces/test/builds?labelselector=%s' % (urllib.quote('app=%s' % name)), headers=auth_heads, verify=False)
+
+    data = json.loads(response.content)
+
+    if len(data['items']) == 0:
+        return '%s not found!' % name, 404
+
+    latest_build_number = 0
+    latest_build = None
+    for current_build in data['items']:
+
+        try:
+            if int(current_build['metadata']['annotations']['openshift.io/build.number']) > latest_build_number:
+                latest_build_number = int(current_build['metadata']['annotations']['openshift.io/build.number'])
+                latest_build = current_build
+        except KeyError:
+            pass
+    new_build_number = latest_build_number + 1
+    latest_build['metadata']['annotations']['openshift.io/build.number'] = str(new_build_number)
+    latest_build['metadata']['name'] = latest_build['metadata']['name'].replace(str(latest_build_number), str(new_build_number))
+    del latest_build['metadata']['selfLink']
+    del latest_build['metadata']['uid']
+    del latest_build['metadata']['resourceVersion']
+    del latest_build['status']
+    latest_build['apiVersion'] = 'v1'
+    latest_build['kind'] = 'Build'
+
+
+    json_payload = json.dumps(latest_build)
+    response = requests.post(uri + '/oapi/v1/namespaces/test/builds', headers=auth_heads, verify=False, data=json_payload)
+
+    return response.content, response.status_code
+
+# curl -X POST $URL/update/self -> re-provisions CC (no effect)
+# curl -X POST $URL/update/$NAME -> re-provisions the deploymentConfig $NAME, do this after a /build/$NAME was triggered
+@app.route('/update/<name>', methods=['POST'])
+def update(name):
+    if name == 'self':
+        return 'CC does not support update on itself, use build instead!', 500
+
+    namespace = os.environ.get('NAMESPACE')
+    uri = os.environ.get('URI')
+
+    auth_heads = get_auth_heads()
 
     r = requests.get('%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name),
                      headers=auth_heads, verify=False)
