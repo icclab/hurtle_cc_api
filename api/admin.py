@@ -41,7 +41,7 @@ def home():
 
 
 # curl -X GET $URL/build/$NAME/ -> gets a list of all builds
-@app.route('/build/<name>/', methods=['GET'])
+@app.route('/build/<name>', methods=['GET'])
 def list_builds(name):
     auth_heads = get_auth_heads()
 
@@ -57,7 +57,7 @@ def list_builds(name):
         except KeyError:
             pass
 
-    return json.dumps(builds), 200
+    return json.dumps(builds), response.status_code
 
 
 # curl -X GET $URL/build/$NAME/$BUILD_ID/ -> gets the status of the build
@@ -70,7 +70,7 @@ def get_build(name, build):
 
     data = json.loads(response.content)
 
-    return json.dumps(data['status']), 200
+    return json.dumps(data['status']), response.status_code
 
 
 # curl -X POST $URL/build/self -> re-builds CC (also re-provisions)
@@ -119,7 +119,7 @@ def build(name):
     response = requests.post(uri + '/oapi/v1/namespaces/test/builds', headers=auth_heads, verify=False,
                              data=json_payload)
 
-    return response.content, response.status_code
+    return {'build_name': latest_build['metadata']['name']}, response.status_code
 
 
 # curl -X POST $URL/update/self -> re-provisions CC (no effect)
