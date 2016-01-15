@@ -15,12 +15,21 @@ if not namespace:
     raise AttributeError('CC not configured properly! no NAMESPACE found!')
 
 
+def print_response(response):
+    if response.content:
+        print '> %i: %s' % (response.status_code, response.content)
+    else:
+        print '> %i' % response.status_code
+
+
 def get_auth_heads():
     uri = os.environ.get('URI', False)
     if not uri:
         raise AttributeError('No URI defined!')
 
-    response = requests.get(uri + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+    url = uri + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client'
+    print 'curl -v -X GET %s' % url
+    response = requests.get(url,
                             auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False,
                             allow_redirects=False)
 
@@ -45,17 +54,19 @@ def home():
 def list_builds(name):
     auth_heads = get_auth_heads()
 
-    response = requests.get(
-        uri + '/oapi/v1/namespaces/%s/builds?labelselector=%s' % (namespace, urllib.quote('app=%s' % name)),
-        headers=auth_heads, verify=False)
+    url = uri + '/oapi/v1/namespaces/%s/builds?labelSelector=%s' % (namespace, urllib.quote('app=%s' % name))
+    print 'curl -v -X GET %s' % url
+    response = requests.get(url, headers=auth_heads, verify=False)
+    print_response(response)
 
     data = json.loads(response.content)
     builds = []
-    for build in data['items']:
-        try:
-            builds.append(build['metadata']['name'])
-        except KeyError:
-            pass
+    if isinstance(data['items'], list):
+        for build in data['items']:
+            try:
+                builds.append(build['metadata']['name'])
+            except KeyError:
+                pass
 
     return json.dumps(builds), response.status_code
 
@@ -65,8 +76,11 @@ def list_builds(name):
 def get_build(name, build):
     auth_heads = get_auth_heads()
 
-    response = requests.get(uri + '/oapi/v1/namespaces/%s/builds/%s' % (namespace, build), headers=auth_heads,
+    url = uri + '/oapi/v1/namespaces/%s/builds/%s' % (namespace, build)
+    print 'curl -v -X GET %s' % url
+    response = requests.get(url, headers=auth_heads,
                             verify=False)
+    print_response(response)
 
     data = json.loads(response.content)
 
@@ -85,14 +99,17 @@ def build(name):
 
     auth_heads = get_auth_heads()
 
+    url = uri + '/oapi/v1/namespaces/%s/builds' % namespace
+    print 'curl -v -X GET %s?labelSelector=app=build' % url
     response = requests.get(
-        uri + '/oapi/v1/namespaces/%s/builds?labelselector=%s' % (namespace, urllib.quote('app=%s' % name)),
-        headers=auth_heads, verify=False)
+            url,
+            headers=auth_heads, verify=False, params={'labelSelector': 'app=%s' % name})
+    print_response(response)
 
     data = json.loads(response.content)
 
     if len(data['items']) == 0:
-        return '%s not found!' % name, 404
+        return 'BuildConfig with name %s not found!' % name, 404
 
     latest_build_number = 0
     latest_build = None
@@ -116,10 +133,13 @@ def build(name):
     latest_build['kind'] = 'Build'
 
     json_payload = json.dumps(latest_build)
-    response = requests.post(uri + '/oapi/v1/namespaces/test/builds', headers=auth_heads, verify=False,
+    url = uri + '/oapi/v1/namespaces/test/builds'
+    print 'curl -v -X POST %s -d \'%s\'' % (url, json_payload)
+    response = requests.post(url, headers=auth_heads, verify=False,
                              data=json_payload)
+    print_response(response)
 
-    return {'build_name': latest_build['metadata']['name']}, response.status_code
+    return json.dumps({'build_name': latest_build['metadata']['name']}), response.status_code
 
 
 # curl -X POST $URL/update/self -> re-provisions CC (no effect)
@@ -131,8 +151,11 @@ def update(name):
 
     auth_heads = get_auth_heads()
 
-    r = requests.get('%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name),
+    url = '%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name)
+    print 'curl -v -X GET %s' % url
+    r = requests.get(url,
                      headers=auth_heads, verify=False)
+    print_response(r)
 
     if r.status_code != 200:
         return 'DeploymentConfig %s not found!' % name, 404
@@ -152,8 +175,11 @@ def update(name):
 
     deployment_config_json = json.dumps(deployment_config)
 
-    r = requests.put('%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name), headers=auth_heads,
+    url = '%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name)
+    print 'curl -v -X PUT %s -d \'%s\'' % (url, deployment_config_json)
+    r = requests.put(url, headers=auth_heads,
                      verify=False, data=deployment_config_json)
+    print_response(r)
 
     if r.status_code == 200:
         return json.dumps(deployment_config), 200
