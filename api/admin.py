@@ -17,7 +17,7 @@ if not namespace:
 
 def print_response(response):
     if response.content:
-        print '> %i: %s' % (response.status_code, response.content)
+        print '> %i: %s' % (response.status_code, json.dumps(json.loads(response.content), indent=4))
     else:
         print '> %i' % response.status_code
 
@@ -166,17 +166,17 @@ def update(name):
     found = False
     for env in deployment_config['spec']['template']['spec']['containers'][0]['env']:
         if env['name'] == 'VERSION':
-            env['value'] = deployment_config['status']['latestVersion']
+            env['value'] = str(deployment_config['status']['latestVersion'])
             found = True
         new_env.append(env)
     if not found:
-        new_env.append({'name': 'VERSION', 'value': deployment_config['status']['latestVersion']})
+        new_env.append({'name': 'VERSION', 'value': str(deployment_config['status']['latestVersion'])})
     deployment_config['spec']['template']['spec']['containers'][0]['env'] = new_env
 
     deployment_config_json = json.dumps(deployment_config)
 
     url = '%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name)
-    print 'curl -v -X PUT %s -d \'%s\'' % (url, deployment_config_json)
+    print 'curl -v -X PUT %s -d \'%s\'' % (url, json.dumps(deployment_config, indent=4))
     r = requests.put(url, headers=auth_heads,
                      verify=False, data=deployment_config_json)
     print_response(r)
@@ -184,7 +184,7 @@ def update(name):
     if r.status_code == 200:
         return json.dumps(deployment_config), 200
     else:
-        return 'Something went wrong!', r.status_code
+        return r.content, r.status_code
 
 
 def server(host, port):
