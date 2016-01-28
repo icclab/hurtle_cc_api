@@ -5,6 +5,9 @@ import re
 import json
 import urllib
 
+import sys
+sys.stdout = sys.stderr
+
 app = Flask('hurtle-cc-api')
 
 uri = os.environ.get('URI', False)
@@ -54,6 +57,7 @@ def home():
 def list_builds(name):
     auth_heads = get_auth_heads()
 
+    print '### Gathering Builds for %s' % name
     url = uri + '/oapi/v1/namespaces/%s/builds?labelSelector=%s' % (namespace, urllib.quote('app=%s' % name))
     print 'curl -v -X GET %s' % url
     response = requests.get(url, headers=auth_heads, verify=False)
@@ -76,6 +80,7 @@ def list_builds(name):
 def get_build(name, build):
     auth_heads = get_auth_heads()
 
+    print '### Gathering Details on build %s for %s' % (build, name)
     url = uri + '/oapi/v1/namespaces/%s/builds/%s' % (namespace, build)
     print 'curl -v -X GET %s' % url
     response = requests.get(url, headers=auth_heads,
@@ -98,6 +103,8 @@ def build(name):
         return 'You must provide a valid name!', 404
 
     auth_heads = get_auth_heads()
+
+    print '### Rebuilding %s' % name
 
     url = uri + '/oapi/v1/namespaces/%s/builds' % namespace
     print 'curl -v -X GET %s?labelSelector=app=build' % url
@@ -122,6 +129,9 @@ def build(name):
         except KeyError:
             pass
     new_build_number = latest_build_number + 1
+
+    print '### Latest Build was %i, new Build is %i' % (latest_build_number, new_build_number)
+
     latest_build['metadata']['annotations']['openshift.io/build.number'] = str(new_build_number)
     latest_build['metadata']['name'] = latest_build['metadata']['name'].replace(str(latest_build_number),
                                                                                 str(new_build_number))
@@ -151,6 +161,7 @@ def update(name):
 
     auth_heads = get_auth_heads()
 
+    print '### Redeploying %s' % name
     url = '%s/oapi/v1/namespaces/%s/deploymentconfigs/%s' % (uri, namespace, name)
     print 'curl -v -X GET %s' % url
     r = requests.get(url,
