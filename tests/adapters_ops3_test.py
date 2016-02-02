@@ -41,7 +41,7 @@ class TestOpenShiftAdapter(unittest.TestCase):
         self.URI="https://master.ops3.cloudcomplab.ch:8443"
         self.ops3 = ops3.OpenShift3Adapter(self.URI, namespace='mcn', domain='.apps.ops3.cloudcomplab.ch')
 
-        self.template_gen = ops3.SOTemplateGen(so_name='foo_name', namespace='foo_namespace', is_name='foo_is', base_url='foo_url')
+        self.template_gen = ops3.SOTemplateGen(so_name='foo_name', namespace='foo_namespace', is_name='foo_is', base_url='foo_url', env={})
 
         self.mox = mox.Mox()
 
