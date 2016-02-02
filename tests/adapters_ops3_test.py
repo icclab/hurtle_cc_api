@@ -246,103 +246,103 @@ class TestOpenShiftAdapter(unittest.TestCase):
     #     self.mox.VerifyAll()
     #     self.assertEqual(app['data'], {'id': 'foo_name', 'scalable': 'False'})
 
-    def test_retrieve_app_for_success(self):
-        # data
-        uid = 'foo_name'
-        reqs = [{"method": 'GET',
-                 "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
-                 "return_code": 200,
-                 "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete' }}}]}
-                 }]
+    # def test_retrieve_app_for_success(self):
+    #     # data
+    #     uid = 'foo_name'
+    #     reqs = [{"method": 'GET',
+    #              "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
+    #              "return_code": 200,
+    #              "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete' }}}]}
+    #              }]
+    #
+    #     # setup
+    #     c = self._setup_http(reqs)
+    #     self.ops3.conn = c
+    #     self.ops3.get_auth_heads = self._get_auth_heads
+    #
+    #     # start
+    #     self.mox.ReplayAll()
+    #
+    #     # execute
+    #     self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
+    #
+    #     # assert
+    #     self.mox.VerifyAll()
 
-        # setup
-        c = self._setup_http(reqs)
-        self.ops3.conn = c
-        self.ops3.get_auth_heads = self._get_auth_heads
+    # def test_retrieve_app_for_failure(self):
+    #     with self.assertRaises(AttributeError) as context:
+    #         self.ops3.retrieve_app('', '')
+    #
+    #     self.assertTrue('Please provide a valid identifier.' in context.exception)
+    #
+    #     # data
+    #     uid = 'foo_name'
+    #     reqs = [{"method": 'GET',
+    #              "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
+    #              "return_code": 401,
+    #              "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete' }}}]}
+    #              }]
+    #
+    #     # setup
+    #     c = self._setup_http(reqs)
+    #     self.ops3.conn = c
+    #     self.ops3.get_auth_heads = self._get_auth_heads
+    #
+    #     # start
+    #     self.mox.ReplayAll()
+    #
+    #     # execute
+    #     with self.assertRaises(AttributeError) as context:
+    #         self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
+    #
+    #     # assert
+    #     self.mox.VerifyAll()
+    #     self.assertTrue('Error while retrieving app with identifier foo_name' in context.exception)
 
-        # start
-        self.mox.ReplayAll()
-
-        # execute
-        self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
-
-        # assert
-        self.mox.VerifyAll()
-
-    def test_retrieve_app_for_failure(self):
-        with self.assertRaises(AttributeError) as context:
-            self.ops3.retrieve_app('', '')
-
-        self.assertTrue('Please provide a valid identifier.' in context.exception)
-
-        # data
-        uid = 'foo_name'
-        reqs = [{"method": 'GET',
-                 "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
-                 "return_code": 401,
-                 "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete' }}}]}
-                 }]
-
-        # setup
-        c = self._setup_http(reqs)
-        self.ops3.conn = c
-        self.ops3.get_auth_heads = self._get_auth_heads
-
-        # start
-        self.mox.ReplayAll()
-
-        # execute
-        with self.assertRaises(AttributeError) as context:
-            self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
-
-        # assert
-        self.mox.VerifyAll()
-        self.assertTrue('Error while retrieving app with identifier foo_name' in context.exception)
-
-    def test_retrieve_app_for_sanity(self):
-        # data
-        uid = 'foo_name'
-        reqs = [{"method": 'GET',
-                 "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
-                 "return_code": 200,
-                 "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
-                                          {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
-                                          {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
-                                          {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
-                                          {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Nope'}}}]}
-                 }]
-
-        # setup
-        c = self._setup_http(reqs)
-        self.ops3.conn = c
-        self.ops3.get_auth_heads = self._get_auth_heads
-
-        # start
-        self.mox.ReplayAll()
-
-        # execute
-        app, _ = self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
-
-        # assert
-        self.mox.VerifyAll()
-        self.assertEqual('foo_name.mcn.apps.ops3.cloudcomplab.ch', app['data']['app_url'])
-        self.assertEqual(False, app['data']['state'])
-        self.assertEqual('foo_name', app['data']['name'])
-
-        # data
-        reqs[0]["return_obj"]["items"].pop()
-
-        # setup
-        c = self._setup_http(reqs)
-        self.ops3.conn = c
-
-        # start
-        self.mox.ReplayAll()
-
-        # execute
-        app, _ = self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
-        self.mox.VerifyAll()
-        self.assertEqual(True, app['data']['state'])
+    # def test_retrieve_app_for_sanity(self):
+    #     # data
+    #     uid = 'foo_name'
+    #     reqs = [{"method": 'GET',
+    #              "url": self.URI + '/api/v1/namespaces/' + NAMESPACE + '/replicationcontrollers?labelSelector=name=' + uid,
+    #              "return_code": 200,
+    #              "return_obj": {'items': [{'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
+    #                                       {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
+    #                                       {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
+    #                                       {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Complete'}}},
+    #                                       {'metadata': {'annotations': {'openshift.io/deployment.phase': 'Nope'}}}]}
+    #              }]
+    #
+    #     # setup
+    #     c = self._setup_http(reqs)
+    #     self.ops3.conn = c
+    #     self.ops3.get_auth_heads = self._get_auth_heads
+    #
+    #     # start
+    #     self.mox.ReplayAll()
+    #
+    #     # execute
+    #     app, _ = self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
+    #
+    #     # assert
+    #     self.mox.VerifyAll()
+    #     self.assertEqual('foo_name.mcn.apps.ops3.cloudcomplab.ch', app['data']['app_url'])
+    #     self.assertEqual(False, app['data']['state'])
+    #     self.assertEqual('foo_name', app['data']['name'])
+    #
+    #     # data
+    #     reqs[0]["return_obj"]["items"].pop()
+    #
+    #     # setup
+    #     c = self._setup_http(reqs)
+    #     self.ops3.conn = c
+    #
+    #     # start
+    #     self.mox.ReplayAll()
+    #
+    #     # execute
+    #     app, _ = self.ops3.retrieve_app('foo_name', self._get_auth_heads(''))
+    #     self.mox.VerifyAll()
+    #     self.assertEqual(True, app['data']['state'])
 
     # def test_delete_app_for_success(self):
     #     uid = 'foo_name'
@@ -543,20 +543,20 @@ class TestOpenShiftAdapter(unittest.TestCase):
     #     # assert
     #     self.mox.VerifyAll()
 
-    def test_get_auth_heads_for_success(self):
-        reqs = [{"method": 'GET',
-                 "url": self.URI + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
-                 "headers": {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='},
-                 "allow_redirects": False,
-                 "return_code": 302,
-                 "return_headers": {
-                     "Location": "https://master.ops3.cloudcomplab.ch:8443/oauth/token/display#access_token=kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio&expires_in=86400&token_type=bearer"
-                 }}]
-        c = self._setup_http(reqs)
-        self.ops3.conn = c
-        self.mox.ReplayAll()
-        self.ops3.get_auth_heads({'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
-        self.mox.VerifyAll()
+    # def test_get_auth_heads_for_success(self):
+    #     reqs = [{"method": 'GET',
+    #              "url": self.URI + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+    #              "headers": {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='},
+    #              "allow_redirects": False,
+    #              "return_code": 302,
+    #              "return_headers": {
+    #                  "Location": "https://master.ops3.cloudcomplab.ch:8443/oauth/token/display#access_token=kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio&expires_in=86400&token_type=bearer"
+    #              }}]
+    #     c = self._setup_http(reqs)
+    #     self.ops3.conn = c
+    #     self.mox.ReplayAll()
+    #     self.ops3.get_auth_heads({'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
+    #     self.mox.VerifyAll()
 
     # def test_get_auth_heads_for_failure(self):
     #     # without auth header
@@ -578,22 +578,22 @@ class TestOpenShiftAdapter(unittest.TestCase):
     #         self.ops3.get_auth_heads({'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
     #     self.assertTrue('Login Error' in context.exception)
 
-    def test_get_auth_heads_for_sanity(self):
-        wanted_token = {'Authorization': 'Bearer kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio'}
-
-        reqs = [{"method": 'GET',
-                 "url": self.URI + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
-                 "headers": {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='},
-                 "allow_redirects": False,
-                 "return_code": 302,
-                 "return_headers": {
-                     "Location": "https://master.ops3.cloudcomplab.ch:8443/oauth/token/display#access_token=kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio&expires_in=86400&token_type=bearer"
-                 }}]
-        c = self._setup_http(reqs)
-
-        self.ops3.conn = c
-
-        self.mox.ReplayAll()
-        auth_token = self.ops3.get_auth_heads({'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
-        self.mox.VerifyAll()
-        self.assertEqual(auth_token, wanted_token)
+    # def test_get_auth_heads_for_sanity(self):
+    #     wanted_token = {'Authorization': 'Bearer kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio'}
+    #
+    #     reqs = [{"method": 'GET',
+    #              "url": self.URI + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+    #              "headers": {'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='},
+    #              "allow_redirects": False,
+    #              "return_code": 302,
+    #              "return_headers": {
+    #                  "Location": "https://master.ops3.cloudcomplab.ch:8443/oauth/token/display#access_token=kATRJzppj1I-LkzHNyBvmJ5Ak90yYhTt9Y4fLuV1Wio&expires_in=86400&token_type=bearer"
+    #              }}]
+    #     c = self._setup_http(reqs)
+    #
+    #     self.ops3.conn = c
+    #
+    #     self.mox.ReplayAll()
+    #     auth_token = self.ops3.get_auth_heads({'Authorization': 'Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=='})
+    #     self.mox.VerifyAll()
+    #     self.assertEqual(auth_token, wanted_token)
