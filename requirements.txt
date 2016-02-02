@@ -2,3 +2,4 @@ pyssf==0.4.7
 requests
 tornado
 flask
+yaml
