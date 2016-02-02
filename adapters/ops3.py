@@ -229,6 +229,7 @@ class OpenShift3Adapter(object):
         # we hit a redirect, which fails with a 500 in current version,
         # so we stop redirect and check for 302 code
         if not response.status_code == 302:
+            LOG.error('could not login to OpenShfit with these credentials: ' + simple_auth_head)
             raise AttributeError('Login Error')
 
         location = response.headers['Location']
