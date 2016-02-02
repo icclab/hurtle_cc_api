@@ -222,9 +222,13 @@ class OpenShift3Adapter(object):
         if not simple_auth_head:
             raise AttributeError('No auth header provided')
 
-        response = self.request('GET', self.url +
-                                '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
-                                headers=simple_auth_head, verify=False, allow_redirects=False)
+        response = requests.get(self.url + '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+                            auth=(os.environ.get('USERNAME'), os.environ.get('PASSWORD')), verify=False,
+                            allow_redirects=False)
+        # for now we use the params provided via the env...
+        # response = self.request('GET', self.url +
+        #                         '/oauth/authorize?response_type=token&client_id=openshift-challenging-client',
+        #                         headers=simple_auth_head, verify=False, allow_redirects=False)
 
         # we hit a redirect, which fails with a 500 in current version,
         # so we stop redirect and check for 302 code
