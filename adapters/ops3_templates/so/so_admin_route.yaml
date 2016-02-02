@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Route
+metadata:
+  annotations:
+    openshift.io/generatedby: hurtle.it
+  labels:
+    app: ${so_name}
+    it.hurtle.id: ${so_name}
+  name: ${so_name}-admin
+  namespace: ${namespace}
+spec:
+  host: ${so_name}-admin.${namespace}${base_url}
+  to:
+    kind: Service
+    name: ${so_name}-admin
+status: {}

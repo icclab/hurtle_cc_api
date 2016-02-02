@@ -18,10 +18,13 @@ Modules for PaaS adapters.
 """
 
 import json
+import yaml
 import logging
 import urlparse
 import requests
 import re
+import string
+import os
 
 LOG = logging.getLogger(__name__)
 
@@ -110,39 +113,33 @@ class OpenShift3Adapter(object):
         auth_heads = self.get_auth_heads(auth_head)
 
         # Simple Template Generator for Service, DC, Route
-        template_gen = TemplateGen(name, dock_image, self.namespace, kwargs["env"])
 
-        # Create an empty service
-        # ----
+        domain = os.environ.get('DOMAIN', False)
+        if not domain:
+            raise AttributeError('DOMAIN not set!')
+        template_gen = SOTemplateGen(name, self.namespace, dock_image, domain, kwargs.get('env', {}))
 
-        response = self.request('POST', self.url + '/api/v1/namespaces/' + self.namespace + '/services',
-                                data=json.dumps(template_gen.get_serv()), headers=auth_heads, verify=False,
+        entities = [
+            ('api', 'services', 'mongo_svc'),
+            ('api', 'services', 'so_svc'),
+            ('api', 'services', 'so_admin_svc'),
+            ('oapi', 'routes', 'so_route'),
+            ('oapi', 'routes', 'so_admin_route'),
+            ('oapi', 'deploymentconfigs', 'mongo_dc'),
+            ('oapi', 'deploymentconfigs', 'so_dc')
+        ]
+
+        for api, url_type, resource_name in entities:
+            response = self.request('POST', self.url + '/' + api + '/v1/namespaces/' + self.namespace + '/' + url_type,
+                                data=json.dumps(template_gen.get(resource_name)), headers=auth_heads, verify=False,
                                 allow_redirects=False)
-
-        # response.status_code should be 201
-        if not response.status_code == 201:
-            raise AttributeError('Cannot create Service ' + name)
-
-        # ----
-        # create the deploymentconfig deploying a docker image
-        # for now assuming we put all the env vars from the request in all pods
-
-        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + self.namespace + '/deploymentconfigs',
-                                data=json.dumps(template_gen.get_dc()), verify=False, headers=auth_heads)
-
-        # response.status_code should be 201
-        if not response.status_code == 201:
-            raise AttributeError('Cannot create DC ' + name)
-
-        # ----
-        # Create a route of type name.namespace.apps.ops3.cloudcomplab.ch
-        response = self.request('POST', self.url + '/oapi/v1/namespaces/' + self.namespace + '/routes',
-                                data=json.dumps(template_gen.get_route(self.domain)), verify=False,
-                                headers=auth_heads)
-
-        # response.status_code should be 201
-        if not response.status_code == 201:
-            raise AttributeError('Cannot create Route ' + name)
+            if not response.status_code == 201:
+                msg = ''
+                try:
+                    msg = json.loads(response.content)['message']
+                except Exception:
+                    pass
+                raise RuntimeError('Cannot create %s %s, message given: %s' % (url_type, resource_name, msg))
 
         # Return values for retro-compatibility with OpS2 backend
         tmp = dict()
@@ -188,70 +185,31 @@ class OpenShift3Adapter(object):
         """
         Delete an app.
         """
-        # OPS3 : this needs to be the name of the app, not the full uri
         if not uid or len(uid) == 0:
             raise AttributeError('Please provide a valid identifier.')
 
-        # Delete at minimum: service, pods, rc, dc, route
-        # service, rc, dc, route: delete by name
-        # pods: GET with labelSelector=name=[name] then for item in result[items], DELETE pod/item[metadata][name]
-        # dc seems to be like pods even if we create one
-        # suppose uid = name for now
-
         auth_heads = self.get_auth_heads(auth_head)
 
-        # wrap all that with exceptions
+        entities = [
+            ('api', 'services'),
+            ('oapi', 'routes'),
+            ('oapi', 'deploymentconfigs'),
+            ('api', 'replicationcontrollers'),
+        ]
 
-        # delete service
-        response = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace + '/services/' + uid,
-                                headers=auth_heads, verify=False)
-        if response.status_code != 200:
-            raise AttributeError('Could not delete service with uid ' + uid)
-
-        # delete route
-        response = self.request('DELETE', self.url + '/oapi/v1/namespaces/' + self.namespace + '/routes/' + uid,
-                                headers=auth_heads, verify=False)
-        if response.status_code != 200:
-            raise AttributeError('Could not delete route with uid ' + uid)
-
-        # delete all deployment configs
-        response = self.request('GET', self.url + '/oapi/v1/namespaces/' + self.namespace +
-                                '/deploymentconfigs?labelSelector=name=' + uid, headers=auth_heads, verify=False)
-        if response.status_code == 200:
-            for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/oapi/v1/namespaces/' + self.namespace + '/deploymentconfigs/' +
-                                 item['metadata']['name'], headers=auth_heads, verify=False)
+        for api, url_type in entities:
+            response = self.request('GET', self.url + '/' + api + '/v1/namespaces/' + self.namespace + '/' + url_type + '?labelSelector=it.hurtle.id=' + uid,
+                                    headers=auth_heads, verify=False, allow_redirects=False)
+            if not response.status_code == 200:
+                raise RuntimeError('Could not retrieve %s ' % url_type)
+            resources = response.json()['items']
+            for item in resources:
+                resource_name = item['metadata']['name']
+                j = self.request('DELETE', self.url + '/' + api + '/v1/namespaces/' + self.namespace + '/' + url_type + '/' + resource_name, headers=auth_heads, verify=False)
                 if j.status_code != 200:
-                    raise AttributeError('Could not delete deploymentconfig with uid ' + uid)
-        else:
-            raise AttributeError('Could not retrieve deploymentconfigs')
+                    raise AttributeError('Could not delete %s with uid %s' % (url_type, item['metadata']['name']))
 
-        # delete all replicationcontrollers
-        response = self.request('GET', self.url + '/api/v1/namespaces/' + self.namespace +
-                                '/replicationcontrollers?labelSelector=name=' + uid, headers=auth_heads, verify=False)
-        if response.status_code == 200:
-            for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace +
-                                 '/replicationcontrollers/' + item['metadata']['name'], headers=auth_heads,
-                                 verify=False)
-                if j.status_code != 200:
-                    raise AttributeError('Could not delete replicationcontroller with uid ' + uid)
-        else:
-            raise AttributeError('Could not retrieve replicationcontrollers')
 
-        # delete all pods
-        response = self.request('GET', self.url + '/api/v1/namespaces/' + self.namespace +
-                                '/pods?labelSelector=name=' + uid, headers=auth_heads, verify=False)
-        # possibility of issue here if deletion happens too soon after creation,
-        # deploy pod might create application pod during deletion time
-        if response.status_code == 200:
-            for item in response.json()['items']:
-                j = self.request('DELETE', self.url + '/api/v1/namespaces/' + self.namespace + '/pods/' +
-                                 item['metadata']['name'], headers=auth_heads, verify=False)
-                if j.status_code != 200:
-                    raise AttributeError('Could not delete pod with uid ' + uid)
-        else:
-            raise AttributeError('Could not retrieve pods')
         return True
 
     def get_auth_heads(self, simple_auth_head):
@@ -280,100 +238,19 @@ class OpenShift3Adapter(object):
         return auth_heads
 
 
-class TemplateGen(object):
+class SOTemplateGen(object):
     """
-    generates the templates for openshift v3 resources
+    use this to generate all the needed templates for a CI/CD enabled SO
     """
 
-    def __init__(self, name, docker_image, namespace, env=None):
-        self.name = name
-        # env is a double colon separated string of strings, of type A=B::C=D
-        self.env = env
-        self.namespace = namespace
-        self.docker_image = docker_image
-
-    def get_dc(self):
-        """
-        Retrieve a DeploymentConfig configured with name, docker_image, namespace and env.vars provided
-        """
-        deloyment_config = {
-            "kind": "DeploymentConfig",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": self.name,
-                "namespace": self.namespace,
-                "creationTimestamp": None,
-                "labels": {
-                    "deploymentconfig": self.name,
-                    "generatedby": "CC_API",
-                    "name": self.name
-                }
-            },
-            "spec": {
-                "strategy": {
-                    "type": "Recreate",
-                    "resources": {
-
-                    }
-                },
-                "triggers": [
-                    {
-                        "type": "ConfigChange"
-                    }
-                ],
-                "replicas": 1,
-                "selector": {
-                    "deploymentconfig": self.name
-                },
-                "template": {
-                    "metadata": {
-                        "creationTimestamp": None,
-                        "labels": {
-                            "deploymentconfig": self.name,
-                            "generatedby": "CC_API",
-                            "name": self.name
-                        }
-                    },
-                    "spec": {
-                        "containers": [
-                            {
-                                "name": self.name,
-                                "image": self.docker_image,
-                                "ports": [
-                                    {
-                                        "containerPort": 8080,
-                                        "protocol": "TCP"
-                                    }
-                                ],
-                                "resources": {
-
-                                },
-                                "terminationMessagePath": "/dev/termination-log",
-                                "imagePullPolicy": "Always",
-                                "securityContext": {
-                                    "capabilities": {
-
-                                    },
-                                    "privileged": False
-                                },
-                            }
-                        ],
-                        "restartPolicy": "Always",
-                        "dnsPolicy": "ClusterFirst"
-                    }
-                }
-            },
-            "status": {
-
-            }
+    def __init__(self, so_name, namespace, is_name, base_url, env):
+        self.template_dict = {
+            "so_name": so_name,
+            "namespace": namespace,
+            "is_name": is_name,
+            'base_url': base_url
         }
-
-        if self.env is not None:
-            prepared_env = self.prepare_env(self.env)
-            for container in deloyment_config["spec"]["template"]["spec"]["containers"]:
-                container["env"] = prepared_env
-
-        return deloyment_config
+        self.env = self.prepare_env(env)
 
     @staticmethod
     def prepare_env(env):
@@ -390,71 +267,26 @@ class TemplateGen(object):
             prepared_env.append(env_var_dict)
         return prepared_env
 
-    def get_serv(self):
-        """
-        Retrieve a Service template with proper name and namespace
-        """
-        serv = {
-            "kind": "Service",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": self.name,
-                "namespace": self.namespace,
-                "creationTimestamp": None,
-                "labels": {
-                    "generatedby": "CC_API",
-                    "name": self.name
-                }
-            },
-            "spec": {
-                "ports": [
-                    {
-                        "protocol": "TCP",
-                        "port": 8080,
-                        "targetPort": 8080,
-                        "nodePort": 0
-                    }
-                ],
-                "selector": {
-                    "deploymentconfig": self.name
-                },
-                "portalIP": "",
-                "type": "ClusterIP",
-                "sessionAffinity": "None"
-            },
-            "status": {
-                "loadBalancer": {
+    def get_file(self, name):
+        from os import system
 
-                }
-            }
-        }
-        return serv
+        with open('./adapters/ops3_templates/so/%s.yaml' % name) as file:
+            return file.read()
 
-    def get_route(self, suffix):
-        """
-        retrieve a route template according to name, namespace and suffix
-        :param suffix: the ops3 server fqdn (e.g. .apps.ops3.cloudcomplab.ch)
-        """
-        hostname = self.name + "." + self.namespace + suffix
-        route = {
-            "kind": "Route",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": self.name,
-                "labels": {
-                    "generatedby": "CC_API",
-                    "name": self.name
-                }
-            },
-            "spec": {
-                "host": hostname,
-                "to": {
-                    "kind": "Service",
-                    "name": self.name
-                }
-            },
-            "status": {
+    def get(self, name):
+        template = string.Template(self.get_file(name))
+        prepared_template = yaml.load(template.safe_substitute(self.template_dict))
 
-            }
-        }
-        return route
+        # handle env vars
+        if prepared_template['kind'] == 'DeploymentConfig':
+            containers = prepared_template['spec']['template']['spec']['containers']
+            prepared_containers = []
+            for container in containers:
+                if not container['env']:
+                    container['env'] = []
+                for envVar in self.env:
+                    container['env'].append(envVar)
+                prepared_containers.append(container)
+            prepared_template['spec']['template']['spec']['containers'] = prepared_containers
+
+        return prepared_template

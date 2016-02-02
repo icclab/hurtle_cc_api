@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generatedby: hurtle.it
+  labels:
+    app: ${so_name}
+    it.hurtle.id: ${so_name}
+  name: ${so_name}
+  namespace: ${namespace}
+spec:
+  replicas: 1
+  selector:
+    deploymentconfig: ${so_name}
+  strategy:
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ${so_name}
+        deploymentconfig: ${so_name}
+    spec:
+      containers:
+      - env:
+        - name: CC_ADMIN_URL
+          value: http://hurtle-cc-api-admin.test.apps.opsv3.cloudcomplab.ch/
+        - name: DC_NAME
+          value: ${so_name}
+        image: 172.30.33.47:5000/${namespace}/${is_name}:latest
+        imagePullPolicy: Always
+        name: so
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8081
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+  triggers:
+  - type: ConfigChange
+status:

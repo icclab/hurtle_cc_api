@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    openshift.io/generatedby: hurtle.it
+  labels:
+    app: ${so_name}-admin
+    it.hurtle.id: ${so_name}
+  name: ${so_name}-admin
+  namespace: ${namespace}
+spec:
+  ports:
+  - name: admin-api
+    nodePort: 0
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    deploymentconfig: ${so_name}
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

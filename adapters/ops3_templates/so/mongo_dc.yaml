@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    openshift.io/generatedby: hurtle.it
+  labels:
+    app: ${so_name}-mongo
+    it.hurtle.id: ${so_name}
+  name: ${so_name}-mongo
+  namespace: ${namespace}
+spec:
+  replicas: 1
+  selector:
+    deploymentconfig: ${so_name}-mongo
+  strategy:
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ${so_name}-mongo
+        deploymentconfig: ${so_name}-mongo
+    spec:
+      containers:
+      - env:
+        - name: MONGODB_PASSWORD
+          value: mcn
+        - name: MONGODB_USER
+          value: mongo
+        - name: MONGODB_DATABASE
+          value: resources_db
+        - name: MONGODB_ADMIN_PASSWORD
+          value: mcn
+        image: centos/mongodb-26-centos7@sha256:2c034125d49d0a2697db8d348db769e40d6ee214b3436b8adcc70a7a0c81f1dc
+        imagePullPolicy: IfNotPresent
+        name: ${so_name}-mongo
+        ports:
+        - containerPort: 27017
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        volumeMounts:
+        - mountPath: /var/lib/mongodb/data
+          name: ${so_name}-mongo
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - emptyDir: {}
+        name: ${so_name}-mongo
+  triggers:
+status:
