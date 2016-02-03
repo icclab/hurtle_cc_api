@@ -6,7 +6,7 @@ metadata:
   labels:
     app: ${so_name}-admin
     it.hurtle.id: ${so_name}
-  name: ${so_name}-admin
+  name: ${so_name}-a
   namespace: ${namespace}
 spec:
   ports:

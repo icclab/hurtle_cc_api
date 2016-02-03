@@ -9,8 +9,8 @@ metadata:
   name: ${so_name}-admin
   namespace: ${namespace}
 spec:
-  host: ${so_name}-admin.${namespace}${base_url}
+  host: ${so_name}-a.${namespace}${base_url}
   to:
     kind: Service
-    name: ${so_name}-admin
+    name: ${so_name}-a
 status: {}
