@@ -4,7 +4,7 @@ metadata:
   labels:
     name: ${so_name}-mongo
     it.hurtle.id: ${so_name}
-  name: ${so_name}-mongo
+  name: ${so_name}-m
 spec:
   ports:
     - port: 27017
