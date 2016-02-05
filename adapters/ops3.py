@@ -26,6 +26,9 @@ import re
 import string
 import os
 
+import sys
+sys.stdout = sys.stderr
+
 LOG = logging.getLogger(__name__)
 
 
@@ -130,6 +133,7 @@ class OpenShift3Adapter(object):
         ]
 
         for api, url_type, resource_name in entities:
+            print '>>> creating %s %s' % (url_type, resource_name)
             response = self.request('POST', self.url + '/' + api + '/v1/namespaces/' + self.namespace + '/' + url_type,
                                 data=json.dumps(template_gen.get(resource_name)), headers=auth_heads, verify=False,
                                 allow_redirects=False)
