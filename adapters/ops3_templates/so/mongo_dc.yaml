@@ -29,13 +29,13 @@ spec:
       containers:
       - env:
         - name: MONGODB_PASSWORD
-          value: mcn
+          value: hurtle
         - name: MONGODB_USER
           value: mongo
         - name: MONGODB_DATABASE
           value: resources_db
         - name: MONGODB_ADMIN_PASSWORD
-          value: mcn
+          value: hurtle
         image: centos/mongodb-26-centos7@sha256:2c034125d49d0a2697db8d348db769e40d6ee214b3436b8adcc70a7a0c81f1dc
         imagePullPolicy: IfNotPresent
         name: ${so_name}-mongo
