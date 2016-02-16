@@ -1,9 +1,13 @@
 from flask import Flask
+from flask import request
+import yaml
 import requests
 import os
 import re
 import json
 import urllib
+import random
+import string
 
 import sys
 sys.stdout = sys.stderr
@@ -196,6 +200,65 @@ def update(name):
         return json.dumps(deployment_config), 200
     else:
         return r.content, r.status_code
+
+
+@app.route('/create', methods=['POST'])
+def create():
+
+    auth_heads = get_auth_heads()
+
+    create_data_raw = request.data
+    entities = create_data_raw.split('---')
+    namespace = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(8))
+
+    url = '%s/oapi/v1/projectrequests' % uri
+    r = requests.post(url, headers=auth_heads, verify=False, data=json.dumps({
+        'kind': 'ProjectRequest',
+        'apiVersion': 'v1',
+        'metadata': {
+            'name': namespace
+        }
+    }))
+
+    if r.status_code != 201:
+        return r.content, r.status_code
+
+    for entity_raw in entities:
+
+        entity = yaml.load(entity_raw)
+        if entity is not None:
+            try:
+                name = entity['metadata']['name']
+            except TypeError:
+                pass
+            kind = entity['kind'].lower() + 's'
+
+            # prune stuff that brakes things
+            try:
+                del entity['metadata']['creationTimestamp']
+            except KeyError:
+                pass
+
+            entity['metadata']['namespace'] = namespace
+
+            status_codes = []
+            print '### Creating Resource %s, Kind: %s' % (name, kind)
+            for api in ['api', 'oapi']:
+                url = '%s/%s/v1/namespaces/%s/%s' % (uri, api, namespace, kind)
+                r = requests.post(url, headers=auth_heads, verify=False, data=json.dumps(entity))
+                print_response(r)
+
+                status_codes.append((r.content, r.status_code))
+
+            ok = False
+            for content, status_code in status_codes:
+                if status_code == 201:
+                    ok = True
+
+            if not ok:
+                return content, status_code
+
+    return json.dumps({'namespace': namespace}), 201
 
 
 def server(host, port):
