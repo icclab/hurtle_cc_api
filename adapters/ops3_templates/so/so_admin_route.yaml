@@ -5,7 +5,6 @@ metadata:
     openshift.io/generatedby: hurtle.it
   labels:
     app: ${so_name}
-    it.hurtle.id: ${so_name}
   name: ${so_name}-admin
   namespace: ${namespace}
 spec:
