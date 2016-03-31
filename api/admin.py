@@ -143,6 +143,7 @@ def build(name):
     del latest_build['metadata']['uid']
     del latest_build['metadata']['resourceVersion']
     del latest_build['status']
+    del latest_build['spec']['revision']
     latest_build['apiVersion'] = 'v1'
     latest_build['kind'] = 'Build'
 
