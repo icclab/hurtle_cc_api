@@ -36,7 +36,7 @@ spec:
           value: http://hurtle-cc-api-admin.test.apps.opsv3.cloudcomplab.ch/
         - name: DC_NAME
           value: ${so_name}
-        image: 172.30.33.47:5000/${namespace}/${is_name}:latest
+        image: ${is_name}
         imagePullPolicy: Always
         name: so
         ports:
