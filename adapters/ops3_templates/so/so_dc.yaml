@@ -33,7 +33,7 @@ spec:
         - name: DB_PASSWORD
           value: hurtle
         - name: CC_ADMIN_URL
-          value: http://hurtle-cc-api-admin.test.apps.opsv3.cloudcomplab.ch/
+          value: http://hurtle-cc-api-admin.${namespace}.apps.opsv3.cloudcomplab.ch/
         - name: DC_NAME
           value: ${so_name}
         image: ${is_name}
