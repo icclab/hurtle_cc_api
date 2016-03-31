@@ -147,7 +147,7 @@ def build(name):
     latest_build['kind'] = 'Build'
 
     json_payload = json.dumps(latest_build)
-    url = uri + '/oapi/v1/namespaces/test/builds'
+    url = uri + '/oapi/v1/namespaces/%s/builds' % namespace
     print 'curl -v -X POST %s -d \'%s\'' % (url, json_payload)
     response = requests.post(url, headers=auth_heads, verify=False,
                              data=json_payload)
